@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mongod:*)",
+      "Bash(mongosh:*)",
+      "Bash(winget search:*)",
+      "WebFetch(domain:www.mongodb.com)",
+      "Bash(choco:*)",
+      "Bash(ls:*)",
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-select @radix-ui/react-toast @radix-ui/react-slot @radix-ui/react-label class-variance-authority clsx tailwind-merge lucide-react)",
+      "Bash(mkdir:*)",
+      "Bash(npx vite build)",
+      "Bash(timeout:*)",
+      "Bash(true)",
+      "Bash(git rev-parse:*)",
+      "Bash(rm:*)",
+      "Bash(true)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": []
+  }
+}

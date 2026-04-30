@@ -1,0 +1,62 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const Admin = require('../models/Admin');
+const Member = require('../models/Member');
+const DailyLog = require('../models/DailyLog');
+const { verifyToken } = require('../middleware/auth');
+
+// POST /login — bootstrap: first login creates admin
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    let admin = await Admin.findOne({ email });
+
+    if (!admin) {
+      // First run — create admin
+      const passwordHash = await bcrypt.hash(password, 10);
+      admin = await Admin.create({ email, passwordHash });
+    } else {
+      const valid = await bcrypt.compare(password, admin.passwordHash);
+      if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { adminId: admin._id, email: admin.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({ token, adminId: admin._id, email: admin.email });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /dashboard — all members with today's log (protected)
+router.get('/dashboard', verifyToken, async (req, res) => {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const members = await Member.find(
+      { adminId: req.admin.adminId },
+      'name category gmailEmail _id createdAt'
+    );
+
+    const membersWithLogs = await Promise.all(
+      members.map(async (member) => {
+        const todayLog = await DailyLog.findOne({
+          memberId: member._id,
+          date: today,
+        });
+        return { ...member.toObject(), todayLog: todayLog || null };
+      })
+    );
+
+    res.json({ members: membersWithLogs });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;

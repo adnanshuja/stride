@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { LogIn } from 'lucide-react';
+import MemberLoginForm from '../components/MemberLoginForm';
+import { LogIn, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState('admin');
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -29,37 +30,78 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark flex items-center justify-center px-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent pointer-events-none" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#0C0E1D] flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Noise overlay */}
+      <div className="noise-overlay" />
 
-      <div className="w-full max-w-md relative">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 mb-6">
-            <LogIn className="w-7 h-7 text-accent" />
+      {/* Grid pattern */}
+      <div className="absolute inset-0 bg-grid opacity-40" />
+
+      {/* Ambient glow orbs — mint + magenta */}
+      <div className="absolute top-1/4 -left-32 w-[28rem] h-[28rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(81, 250, 170, 0.12) 0%, transparent 70%)', filter: 'blur(100px)', pointerEvents: 'none' }} />
+      <div className="absolute bottom-1/4 -right-32 w-[28rem] h-[28rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255, 129, 255, 0.1) 0%, transparent 70%)', filter: 'blur(100px)', pointerEvents: 'none' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(81, 250, 170, 0.05) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none' }} />
+
+      {/* Decorative floating rings */}
+      <div className="absolute top-1/3 left-16 w-72 h-72 rounded-full border border-white/[0.03] animate-float" />
+      <div className="absolute bottom-1/3 right-16 w-56 h-56 rounded-full border border-white/[0.03] animate-float" style={{ animationDelay: '-3s' }} />
+
+      <div className="w-full max-w-sm relative">
+        {/* Brand header */}
+        <div className="text-center mb-10 animate-fade-up">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#51FAAA]/10 border border-[#51FAAA]/20 mb-5 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#51FAAA]/10 to-transparent" />
+            <LogIn className="relative w-7 h-7 text-[#51FAAA]" />
           </div>
-          <h1 className="font-serif text-5xl text-accent mb-2">StrideSync</h1>
-          <p className="text-gray-500 text-sm font-mono">Track together. Grow together.</p>
+          <h1 className="font-display text-5xl text-white tracking-tight mb-2">
+            Stride<span className="text-[#51FAAA]">Sync</span>
+          </h1>
+          <p className="text-gray-500 text-xs font-sans tracking-wider uppercase">
+            Track together. Grow together.
+          </p>
         </div>
 
-        <Card className="border-white/10">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-center font-mono text-lg text-white/80">
-              Admin Login
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Login card */}
+        <div className="glass rounded-2xl p-6 animate-slide-in-up">
+          {/* Tabs */}
+          <div className="flex mb-6 bg-white/[0.03] rounded-xl p-1 gap-0.5">
+            <button
+              type="button"
+              onClick={() => setTab('admin')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-sans font-medium tracking-wider transition-all duration-200 ${
+                tab === 'admin'
+                  ? 'bg-[#51FAAA]/10 text-[#51FAAA] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-400'
+              }`}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('member')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-sans font-medium tracking-wider transition-all duration-200 ${
+                tab === 'member'
+                  ? 'bg-[#51FAAA]/10 text-[#51FAAA] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-400'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Member
+            </button>
+          </div>
+
+          {tab === 'admin' ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs px-4 py-3 rounded-xl font-sans flex items-center gap-2 animate-fade-in">
+                  <div className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
                   {error}
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-mono text-gray-400">Email</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-sans text-gray-500 tracking-wider uppercase">Email</label>
                 <Input
                   type="email"
                   value={email}
@@ -69,8 +111,8 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-mono text-gray-400">Password</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-sans text-gray-500 tracking-wider uppercase">Password</label>
                 <Input
                   type="password"
                   value={password}
@@ -80,23 +122,28 @@ export default function LoginPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full h-12" disabled={loading}>
+              <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                    <span className="w-3.5 h-3.5 border-2 border-[#0C0E1D]/30 border-t-[#0C0E1D] rounded-full animate-spin" />
                     Signing in...
                   </span>
                 ) : (
-                  'Sign In'
+                  <span className="flex items-center gap-2">
+                    Enter
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
                 )}
               </Button>
 
-              <p className="text-xs text-gray-600 text-center font-mono">
-                First login creates your admin account
+              <p className="text-[10px] text-gray-600 text-center font-sans tracking-wider uppercase pt-1">
+                First login creates admin account
               </p>
             </form>
-          </CardContent>
-        </Card>
+          ) : (
+            <MemberLoginForm />
+          )}
+        </div>
       </div>
     </div>
   );

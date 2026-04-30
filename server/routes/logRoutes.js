@@ -2,21 +2,27 @@ const express = require('express');
 const router = express.Router();
 const Member = require('../models/Member');
 const DailyLog = require('../models/DailyLog');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireMember } = require('../middleware/auth');
 
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// POST /update — Log an hourly update (JWT auth, replaces PIN auth)
-router.post('/update', verifyToken, async (req, res) => {
+// POST /update — Log an hourly update (member role only)
+router.post('/update', verifyToken, requireMember, async (req, res) => {
   try {
-    const { memberId, hour, update, span, isBreak } = req.body;
+    const { memberId, hour, update, span, isBreak, courseId } = req.body;
     const member = await Member.findById(memberId);
     if (!member) return res.status(404).json({ error: 'Member not found' });
 
-    if (hour < 1 || hour > 10) {
-      return res.status(400).json({ error: 'Hour must be between 1 and 10' });
+    const date = today();
+
+    let log = await DailyLog.findOne({ memberId, date });
+    const breakCount = log?.breakCount || 0;
+    const maxSlots = 10 + breakCount;
+
+    if (hour < 1 || hour > maxSlots) {
+      return res.status(400).json({ error: `Hour must be between 1 and ${maxSlots}` });
     }
 
     if (!isBreak && member.category === 'RESTRICTED') {
@@ -31,17 +37,49 @@ router.post('/update', verifyToken, async (req, res) => {
     }
 
     const entryText = isBreak ? (update ? `Break — ${update}` : 'Break') : update;
-    const date = today();
     const hoursToFill = {};
-    const spanLength = span ? Math.min(span, 10 - hour + 1) : 1;
+    const spanLength = span ? Math.min(span, maxSlots - hour + 1) : 1;
 
     for (let i = 0; i < spanLength; i++) {
       hoursToFill[`hours.${hour + i}`] = entryText;
+      if (courseId) {
+        hoursToFill[`courseHours.${hour + i}`] = courseId;
+      }
     }
 
-    const log = await DailyLog.findOneAndUpdate(
+    log = await DailyLog.findOneAndUpdate(
       { memberId, date },
       { $set: { ...hoursToFill, updatedAt: new Date() } },
+      { upsert: true, new: true }
+    );
+
+    res.json(log);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /start-day — Mark today as started (member role only)
+router.post('/start-day', verifyToken, requireMember, async (req, res) => {
+  try {
+    const { memberId } = req.body;
+    const member = await Member.findById(memberId);
+    if (!member) return res.status(404).json({ error: 'Member not found' });
+
+    const date = today();
+
+    let log = await DailyLog.findOne({ memberId, date });
+    if (log && log.startedAt) {
+      return res.status(400).json({ error: 'Day already started' });
+    }
+
+    // Format current time as HH:mm
+    const now = new Date();
+    const startedAt = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    log = await DailyLog.findOneAndUpdate(
+      { memberId, date },
+      { $set: { startedAt, updatedAt: new Date() } },
       { upsert: true, new: true }
     );
 

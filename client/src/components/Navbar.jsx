@@ -1,11 +1,17 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { LogOut, LayoutDashboard, History } from 'lucide-react';
+
+const navItems = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/history', label: 'History', icon: History },
+];
 
 export default function Navbar() {
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -13,48 +19,70 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-white/10">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
-            <LayoutDashboard className="w-4 h-4 text-accent" />
+    <nav className="sticky top-4 z-50 mx-auto max-w-6xl px-4">
+      <div className="glass-strong rounded-full px-6 h-14 flex items-center justify-between">
+        <div
+          className="flex items-center gap-3 cursor-pointer select-none"
+          onClick={() => admin && navigate('/dashboard')}
+        >
+          <div className="relative w-8 h-8 rounded-full bg-[#51FAAA]/10 border border-[#51FAAA]/20 flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#51FAAA]/20 to-transparent" />
+            <span className="relative font-display text-sm font-bold text-[#51FAAA] tracking-tight">S</span>
           </div>
-          <span className="font-serif text-xl text-accent">StrideSync</span>
+          <span className="font-display text-lg text-white tracking-tight">
+            Stride<span className="text-[#51FAAA]">Sync</span>
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/dashboard')}
-            className="text-gray-400"
-          >
-            <LayoutDashboard className="w-4 h-4 mr-1.5" />
-            Dashboard
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/history')}
-            className="text-gray-400"
-          >
-            <History className="w-4 h-4 mr-1.5" />
-            History
-          </Button>
-          <div className="h-6 w-px bg-white/10 mx-2" />
+
+        {admin ? (
+          <div className="flex items-center gap-1.5">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <Button
+                  key={item.path}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(item.path)}
+                  className={`relative transition-all duration-300 ${
+                    isActive
+                      ? 'text-white bg-white/[0.06]'
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5 mr-1.5" />
+                  {item.label}
+                </Button>
+              );
+            })}
+
+            <div className="h-5 w-px bg-white/[0.06] mx-2" />
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#51FAAA] opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#51FAAA]" />
+                </span>
+                <span className="text-sm text-gray-400 font-sans hidden sm:inline">{admin.email}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-gray-500 hover:text-rose-400"
+                title="Logout"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        ) : (
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-accent/60" />
-            <span className="text-sm text-gray-400 font-mono">{admin?.email}</span>
+            <span className="text-xs font-sans text-gray-500">Member view</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-gray-500"
-          >
-            <LogOut className="w-4 h-4 mr-1.5" />
-            Logout
-          </Button>
-        </div>
+        )}
       </div>
     </nav>
   );

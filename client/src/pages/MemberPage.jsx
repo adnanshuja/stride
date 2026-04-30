@@ -9,6 +9,8 @@ import BreakSlot from '../components/BreakSlot';
 import ScannerButton from '../components/ScanButton';
 import MemberHistory from '../components/MemberHistory';
 import FocusInput from '../components/FocusInput';
+import CoursesSection from '../components/CoursesSection';
+import JobsSection from '../components/JobsSection';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useToast } from '../components/ui/toast';
@@ -24,6 +26,7 @@ export default function MemberPage() {
   const [todayLog, setTodayLog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scanResults, setScanResults] = useState([]);
+  const [courses, setCourses] = useState([]);
 
   const isAuthenticated = admin || member;
   const isAdminView = !!admin;
@@ -40,10 +43,12 @@ export default function MemberPage() {
     if (!isAuthenticated) return;
     const fetchData = async () => {
       try {
-        const [memberRes, logRes] = await Promise.all([
+        const [memberRes, logRes, coursesRes] = await Promise.all([
           api.get(`/members/${memberId}`).catch(() => null),
           api.get(`/logs/today/${memberId}`),
+          api.get(`/courses/${memberId}`).catch(() => []),
         ]);
+        setCourses(coursesRes.data || []);
         const m = memberRes?.data;
         if (m) setMemberInfo(m);
         if (!m && !memberInfo) {
@@ -74,10 +79,15 @@ export default function MemberPage() {
     return () => { cancelled = true; };
   }, [memberId, isAuthenticated, memberInfo?.category]);
 
-  const handleUpdate = async (slot, text, span) => {
+  const handleUpdate = async (slot, text, span, courseId) => {
+    if (isAdminView) {
+      addToast('Admin cannot log entries', 'error', 3000);
+      return;
+    }
     try {
       const payload = { memberId, hour: slot, update: text };
       if (span && span > 1) payload.span = span;
+      if (courseId) payload.courseId = courseId;
       await api.post('/logs/update', payload);
       const { data } = await api.get(`/logs/today/${memberId}`);
       setTodayLog(data);
@@ -88,6 +98,10 @@ export default function MemberPage() {
   };
 
   const handleBreak = async (slot, note) => {
+    if (isAdminView) {
+      addToast('Admin cannot log entries', 'error', 3000);
+      return;
+    }
     try {
       await api.post('/logs/update', { memberId, hour: slot, update: note || 'Break', isBreak: true });
       const { data } = await api.get(`/logs/today/${memberId}`);
@@ -101,7 +115,16 @@ export default function MemberPage() {
   if (!isAuthenticated) return null;
 
   const hours = todayLog?.hours || {};
-  const currentSlot = Math.max(1, Math.min(10, new Date().getHours() - 7));
+  const courseHours = todayLog?.courseHours || {};
+  const maxSlots = 10 + (todayLog?.breakCount || 0);
+
+  const startedAtHour = todayLog?.startedAt
+    ? parseInt(todayLog.startedAt.split(':')[0], 10)
+    : null;
+
+  const currentSlot = startedAtHour
+    ? Math.max(1, Math.min(maxSlots, new Date().getHours() - startedAtHour + 1))
+    : Math.max(1, Math.min(10, new Date().getHours() - 7));
 
   const getSlotState = (slot) => {
     if (hours[String(slot)]) return 'done';
@@ -116,11 +139,20 @@ export default function MemberPage() {
     return entry === 'Break' || entry.startsWith('Break');
   };
 
+  const formatTime = (timeStr) => {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${m} ${ampm}`;
+  };
+
   // Group consecutive identical entries into spans
   const buildTimeline = () => {
     const items = [];
     let i = 1;
-    while (i <= 10) {
+    while (i <= maxSlots) {
       const entry = hours[String(i)];
       if (!entry || isBreakSlot(i)) {
         items.push({ type: 'slot', slot: i, state: getSlotState(i), text: entry || '', isBreak: isBreakSlot(i) });
@@ -128,7 +160,7 @@ export default function MemberPage() {
         continue;
       }
       let j = i + 1;
-      while (j <= 10 && hours[String(j)] === entry) j++;
+      while (j <= maxSlots && hours[String(j)] === entry) j++;
       if (j - i > 1) {
         items.push({ type: 'span', startSlot: i, endSlot: j - 1, text: entry });
         i = j;
@@ -188,6 +220,35 @@ export default function MemberPage() {
                 <div className="w-1 h-1 rounded-full bg-[#51FAAA]" />
                 <span className="font-sans text-xs text-gray-500 tracking-widest uppercase">Today</span>
               </div>
+
+              {/* Start Day button — shown when day hasn't started and no hours filled */}
+              {!todayLog?.startedAt && Object.keys(hours).length === 0 && (
+                <div className="mb-4">
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await api.post('/logs/start-day', { memberId });
+                        const { data } = await api.get(`/logs/today/${memberId}`);
+                        setTodayLog(data);
+                        addToast('Day started!', 'success', 2000);
+                      } catch (err) {
+                        addToast(err.response?.data?.error || 'Failed to start day', 'error', 3000);
+                      }
+                    }}
+                    className="w-full bg-[#51FAAA] text-[#0C0E1D] font-semibold hover:bg-[#29D97A] transition-all py-6 text-lg"
+                  >
+                    Start Day
+                  </Button>
+                </div>
+              )}
+
+              {/* Started at display */}
+              {todayLog?.startedAt && (
+                <div className="text-sm text-[#51FAAA] font-medium mb-2">
+                  Started at {formatTime(todayLog.startedAt)}
+                </div>
+              )}
+
               {timeline.map((item, idx) => {
                 if (item.type === 'span') {
                   return (
@@ -220,9 +281,11 @@ export default function MemberPage() {
                     isBreak={false}
                     scanChips={item.state === 'current' ? scanResults : []}
                     currentSlot={currentSlot}
-                    onUpdate={(slot, text, span) => handleUpdate(slot, text, span)}
+                    courses={courses}
+                    slotCourseId={courseHours[String(item.slot)] || ''}
+                    onUpdate={(slot, text, span, courseId) => handleUpdate(slot, text, span, courseId)}
                     onEdit={(template) => {}}
-                    maxSpan={Math.min(4, 10 - item.slot + 1)}
+                    maxSpan={Math.min(4, maxSlots - item.slot + 1)}
                   />
                 );
               })}
@@ -243,7 +306,7 @@ export default function MemberPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  for (let i = currentSlot; i <= 10; i++) {
+                  for (let i = currentSlot; i <= maxSlots; i++) {
                     if (!hours[String(i)]) {
                       handleBreak(i, 'Lunch');
                       break;
@@ -257,6 +320,16 @@ export default function MemberPage() {
             </div>
           </>
         )}
+
+        {/* Courses */}
+        <div className="animate-fade-up animate-stagger-3 pt-4">
+          <CoursesSection memberId={memberId} courseHours={todayLog?.courseHours || {}} />
+        </div>
+
+        {/* Job Applications */}
+        <div className="animate-fade-up animate-stagger-3 pt-4">
+          <JobsSection memberId={memberId} />
+        </div>
 
         {/* Member History */}
         <div className="animate-fade-up animate-stagger-3 pt-2">

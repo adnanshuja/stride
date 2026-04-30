@@ -7,6 +7,7 @@ const Member = require('../models/Member');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
+const { sendSignupCode } = require('../services/emailService');
 
 // GET /gmail/init/:memberId — redirect to Google consent
 router.get('/gmail/init/:memberId', async (req, res) => {
@@ -80,6 +81,7 @@ router.post('/member/signup', async (req, res) => {
     member.signupCode = null;
     member.signupCodeExpires = null;
     member.isActive = true;
+    member.emailVerified = true;
     await member.save();
 
     res.json({ success: true });
@@ -128,6 +130,9 @@ router.post('/admin/resend-code/:memberId', verifyToken, requireAdmin, async (re
     }, { new: true });
 
     if (!member) return res.status(404).json({ error: 'Member not found.' });
+
+    // Optionally send signup code via email (no-op if SMTP not configured)
+    sendSignupCode(member.email, code);
 
     res.json({ signupCode: code });
   } catch (error) {

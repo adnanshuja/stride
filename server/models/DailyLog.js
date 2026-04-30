@@ -8,6 +8,11 @@ const DailyLogSchema = new mongoose.Schema({
     of: String,
     default: {},
   },
+  courseHours: {
+    type: Map,
+    of: String,
+    default: {},
+  },
   autoDetected: {
     type: [
       {
@@ -20,6 +25,8 @@ const DailyLogSchema = new mongoose.Schema({
     ],
     default: [],
   },
+  startedAt: { type: String, default: null },
+  breakCount: { type: Number, default: 0 },
   updatedAt: { type: Date, default: Date.now },
 });
 

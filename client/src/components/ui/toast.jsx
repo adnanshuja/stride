@@ -9,7 +9,7 @@ const ToastViewport = forwardRef(({ className, ...props }, ref) => (
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      'fixed top-0 right-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:max-w-[420px]',
+      'fixed top-0 right-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:max-w-[420px] gap-2',
       className
     )}
     {...props}
@@ -18,9 +18,9 @@ const ToastViewport = forwardRef(({ className, ...props }, ref) => (
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName;
 
 const toastVariants = {
-  default: 'border border-white/10 bg-surface text-white',
-  success: 'border-green-500/30 bg-green-500/10 text-green-400',
-  error: 'border-red-500/30 bg-red-500/10 text-red-400',
+  default: 'border border-white/[0.08] bg-[#211F36] text-white',
+  success: 'border-[#51FAAA]/30 bg-[#51FAAA]/10 text-[#51FAAA]',
+  error: 'border-rose-500/30 bg-rose-500/10 text-rose-400',
 };
 
 const Toast = forwardRef(({ className, variant = 'default', ...props }, ref) => {
@@ -28,7 +28,7 @@ const Toast = forwardRef(({ className, variant = 'default', ...props }, ref) => 
     <ToastPrimitives.Root
       ref={ref}
       className={cn(
-        'group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-xl border p-4 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full',
+        'group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-xl border p-4 shadow-lg shadow-black/20 transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full',
         toastVariants[variant],
         className
       )}
@@ -56,7 +56,7 @@ ToastClose.displayName = ToastPrimitives.Close.displayName;
 const ToastTitle = forwardRef(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn('text-sm font-mono font-medium', className)}
+    className={cn('text-sm font-sans font-medium', className)}
     {...props}
   />
 ));
@@ -75,7 +75,7 @@ const ToastAction = forwardRef(({ className, ...props }, ref) => (
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      'inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-transparent px-3 text-xs font-mono font-medium transition-colors hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-accent',
+      'inline-flex h-8 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-transparent px-3 text-xs font-sans font-medium transition-colors hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#51FAAA]',
       className
     )}
     {...props}

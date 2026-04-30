@@ -27,8 +27,12 @@ app.use('/api/logs', logRoutes);
 // Routes mounted in Chunk 6
 const authRoutes = require('./routes/authRoutes');
 const scanRoutes = require('./routes/scanRoutes');
+const courseRoutes = require('./routes/courseRoutes');
+const jobRoutes = require('./routes/jobRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/scan', scanRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/jobs', jobRoutes);
 
 app.listen(PORT, () => {
   console.log(`StrideSync server running on port ${PORT}`);

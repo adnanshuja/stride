@@ -2,9 +2,10 @@ import { useState } from 'react';
 import QuickActions from './QuickActions';
 import { Button } from './ui/button';
 
-export default function SlotEditor({ initialText, duration, onSubmit, onCancel, maxSpan }) {
+export default function SlotEditor({ initialText, initialCourseId, duration, onSubmit, onCancel, maxSpan, courses = [] }) {
   const [text, setText] = useState(initialText || '');
   const [span, setSpan] = useState(duration || 1);
+  const [courseId, setCourseId] = useState(initialCourseId || '');
 
   const handleAction = (action) => {
     setText(action.template);
@@ -32,6 +33,18 @@ export default function SlotEditor({ initialText, duration, onSubmit, onCancel, 
           ))}
         </select>
       </div>
+      {courses.length > 0 && (
+        <select
+          value={courseId}
+          onChange={(e) => setCourseId(e.target.value)}
+          className="w-full bg-[#0C0E1D] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-gray-400 focus:outline-none focus:border-[#51FAAA]/40"
+        >
+          <option value="">No course</option>
+          {courses.map((c) => (
+            <option key={c._id} value={c._id}>{c.name}</option>
+          ))}
+        </select>
+      )}
       {span > 1 && (
         <p className="text-[11px] text-gray-600">Will also fill next {span - 1} hour(s)</p>
       )}
@@ -42,7 +55,7 @@ export default function SlotEditor({ initialText, duration, onSubmit, onCancel, 
         <Button
           type="button"
           size="sm"
-          onClick={() => onSubmit(text, span)}
+          onClick={() => onSubmit(text, span, courseId || undefined)}
           disabled={!text.trim()}
         >
           {span > 1 ? `Log ${span}h` : 'Log'}

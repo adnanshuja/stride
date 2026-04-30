@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../components/ui/toast';
-import { ArrowLeft, Search, History, Globe, Mail } from 'lucide-react';
+import { Search, History, Globe, Mail, Calendar, ArrowLeft } from 'lucide-react';
 
 export default function HistoryPage() {
   const yesterday = new Date();
@@ -49,131 +48,141 @@ export default function HistoryPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-dark">
+    <div className="min-h-screen bg-[#0C0E1D]">
+      <div className="noise-overlay" />
+
+      {/* Ambient glow */}
+      <div className="fixed top-1/4 -left-32 w-[28rem] h-[28rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(81, 250, 170, 0.07) 0%, transparent 70%)', filter: 'blur(120px)', pointerEvents: 'none' }} />
+      <div className="fixed bottom-1/4 -right-32 w-[24rem] h-[24rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255, 129, 255, 0.05) 0%, transparent 70%)', filter: 'blur(120px)', pointerEvents: 'none' }} />
+
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        <div className="flex items-center gap-4">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 animate-fade-up">
           <a
             href="/dashboard"
-            className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center hover:bg-white/5 transition"
+            className="w-9 h-9 rounded-full border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.04] hover:border-white/[0.1] transition-all"
           >
-            <ArrowLeft className="w-4 h-4 text-gray-400" />
+            <ArrowLeft className="w-4 h-4 text-gray-500" />
           </a>
           <div>
-            <h1 className="font-serif text-3xl text-white">History</h1>
-            <p className="text-sm font-mono text-gray-500 mt-0.5">View past hourly logs</p>
+            <p className="text-xs font-sans text-gray-500 tracking-widest uppercase mb-0.5">Records</p>
+            <h1 className="font-display text-3xl text-white">History</h1>
           </div>
         </div>
 
-        <Card className="border-white/10">
-          <CardContent className="pt-6">
-            <div className="flex gap-3 flex-wrap">
-              <div className="flex-1 min-w-[200px]">
-                <Select value={selectedMember} onValueChange={setSelectedMember}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {members.map((m) => (
-                      <SelectItem key={m._id} value={m._id}>{m.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Filter bar */}
+        <div className="glass rounded-2xl p-5 animate-fade-up animate-stagger-1">
+          <div className="flex gap-3 flex-wrap items-end">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-[11px] font-sans text-gray-500 tracking-wider uppercase mb-1.5 block">Member</label>
+              <Select value={selectedMember} onValueChange={setSelectedMember}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((m) => (
+                    <SelectItem key={m._id} value={m._id}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-[11px] font-sans text-gray-500 tracking-wider uppercase mb-1.5 block">Date</label>
               <Input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="w-auto"
               />
-              <Button onClick={handleView}>
-                <Search className="w-4 h-4 mr-2" />
-                View
-              </Button>
             </div>
-          </CardContent>
-        </Card>
+            <Button onClick={handleView} className="mb-0.5">
+              <Search className="w-4 h-4 mr-2" />
+              View
+            </Button>
+          </div>
+        </div>
 
+        {/* Results */}
         {viewed && (
-          <Card className="border-white/10">
-            <CardHeader>
-              <CardTitle className="font-mono text-lg text-white/80 flex items-center gap-2">
-                <History className="w-5 h-5 text-accent" />
-                {memberName}
-                <span className="text-gray-500 text-sm font-mono">— {selectedDate}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hoursEntries.length === 0 && !log?.autoDetected?.length ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 font-mono text-sm">No entries for this day.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {hoursEntries.length > 0 && (
-                    <div className="overflow-hidden rounded-xl border border-white/10">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-white/5 border-b border-white/10">
-                            <th className="text-left py-3 px-4 font-mono text-xs text-gray-400 uppercase tracking-wider">Hour</th>
-                            <th className="text-left py-3 px-4 font-mono text-xs text-gray-400 uppercase tracking-wider">Update</th>
-                            <th className="text-left py-3 px-4 font-mono text-xs text-gray-400 uppercase tracking-wider">Source</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {hoursEntries.map(([hour, text]) => (
-                            <tr key={hour} className="border-b border-white/5 hover:bg-white/[0.02] transition">
-                              <td className="py-3 px-4 font-mono text-sm text-gray-500">H{hour}</td>
-                              <td className="py-3 px-4 font-mono text-sm text-white">{text}</td>
-                              <td className="py-3 px-4">
-                                <Badge variant="default">Manual</Badge>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+          <div className="animate-fade-up animate-stagger-2 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-5 rounded-full bg-[#51FAAA]" />
+              <h2 className="font-display text-xl text-white">{memberName}</h2>
+              <span className="text-sm font-sans text-gray-500 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                {selectedDate}
+              </span>
+            </div>
 
-                  {log?.autoDetected?.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        <h3 className="font-mono text-sm text-gray-400">Auto-Detected</h3>
-                      </div>
-                      <div className="space-y-2">
-                        {log.autoDetected.map((d, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center gap-3 bg-dark/50 border border-white/5 rounded-xl px-4 py-3"
-                          >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${d.source === 'linkedin' ? 'bg-blue-500/10' : 'bg-green-500/10'}`}>
-                              {d.source === 'linkedin' ? (
-                                <Globe className="w-4 h-4 text-blue-400" />
-                              ) : (
-                                <Mail className="w-4 h-4 text-green-400" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-mono text-white">
-                                {d.role} <span className="text-gray-500">@</span> {d.company}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <Badge variant={d.source === 'linkedin' ? 'default' : 'success'}>
-                                {d.source === 'linkedin' ? 'LinkedIn' : 'Gmail'}
-                              </Badge>
-                              <p className="text-xs font-mono text-gray-500 mt-1">{d.time}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            {hoursEntries.length === 0 && !log?.autoDetected?.length ? (
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/[0.03] border border-white/[0.06] mb-4">
+                  <History className="w-7 h-7 text-gray-600" />
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <p className="text-gray-500 font-sans text-sm">No entries for this day.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Manual entries */}
+                {hoursEntries.length > 0 && (
+                  <div className="glass rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3 border-b border-white/[0.04]">
+                      <span className="text-xs font-sans text-gray-500 tracking-wider uppercase">Manual Entries</span>
+                    </div>
+                    <div className="divide-y divide-white/[0.04]">
+                      {hoursEntries.map(([hour, text]) => (
+                        <div key={hour} className="px-5 py-3.5 flex items-center gap-4 hover:bg-white/[0.02] transition-colors">
+                          <span className="font-mono text-xs text-gray-600 w-8 shrink-0">H{hour}</span>
+                          <span className="font-sans text-sm text-white/80 flex-1">{text}</span>
+                          <Badge variant="outline" className="shrink-0">Manual</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Auto-detected entries */}
+                {log?.autoDetected?.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-1 rounded-full bg-[#FF81FF]" />
+                      <h3 className="font-sans text-xs text-gray-500 tracking-wider uppercase">Auto-Detected</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {log.autoDetected.map((d, i) => (
+                        <div
+                          key={i}
+                          className="glass rounded-xl px-4 py-3.5 flex items-center gap-3 hover:border-[#51FAAA]/20 transition-all duration-300"
+                        >
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                            d.source === 'linkedin' ? 'bg-blue-500/10' : 'bg-emerald-500/10'
+                          }`}>
+                            {d.source === 'linkedin' ? (
+                              <Globe className="w-4 h-4 text-blue-400" />
+                            ) : (
+                              <Mail className="w-4 h-4 text-emerald-400" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-sans text-white/80">
+                              {d.role} <span className="text-gray-600">@</span> {d.company}
+                            </p>
+                          </div>
+                          <div className="text-right flex items-center gap-3">
+                            <span className="text-xs font-sans text-gray-600">{d.time}</span>
+                            <Badge variant={d.source === 'linkedin' ? 'default' : 'success'}>
+                              {d.source === 'linkedin' ? 'LinkedIn' : 'Gmail'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

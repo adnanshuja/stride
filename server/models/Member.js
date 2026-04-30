@@ -8,6 +8,7 @@ const MemberSchema = new mongoose.Schema({
   signupCode: { type: String, default: null },
   signupCodeExpires: { type: Date, default: null },
   isActive: { type: Boolean, default: false },
+  emailVerified: { type: Boolean, default: false },
   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
   gmailRefreshToken: { type: String, default: null },
   gmailEmail: { type: String, default: null },

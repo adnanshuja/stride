@@ -3,7 +3,7 @@ import SlotEditor from './SlotEditor';
 import { Badge } from './ui/badge';
 import { CheckCircle2, XCircle, Circle, Coffee, Pencil } from 'lucide-react';
 
-export default function TimelineSlot({ slot, state, text, isBreak, scanChips, currentSlot, onUpdate, onEdit, maxSpan }) {
+export default function TimelineSlot({ slot, state, text, isBreak, scanChips, currentSlot, onUpdate, onEdit, maxSpan, courses = [], slotCourseId = '' }) {
   const [editing, setEditing] = useState(state === 'current' && !text);
 
   if (isBreak) {
@@ -50,9 +50,11 @@ export default function TimelineSlot({ slot, state, text, isBreak, scanChips, cu
       </div>
       <SlotEditor
         initialText={text}
-        onSubmit={(updateText, span) => onUpdate(slot, updateText, span)}
+        initialCourseId={slotCourseId}
+        onSubmit={(updateText, span, courseId) => onUpdate(slot, updateText, span, courseId)}
         onCancel={state !== 'current' ? () => setEditing(false) : undefined}
         maxSpan={maxSpan}
+        courses={courses}
       />
     </div>
   );

@@ -1,26 +1,39 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const Member = require('../models/Member');
 const DailyLog = require('../models/DailyLog');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireAdmin } = require('../middleware/auth');
 
-// All routes protected
-router.use(verifyToken);
+// All routes below require JWT + admin
+router.use(verifyToken, requireAdmin);
 
 // POST / — Create member
 router.post('/', async (req, res) => {
   try {
-    const { name, category, pin } = req.body;
-    const pinHash = await bcrypt.hash(pin, 10);
+    const { name, email, category } = req.body;
+    if (!name || !email) return res.status(400).json({ error: 'Name and email are required.' });
+
+    const existing = await Member.findOne({ email: email.toLowerCase().trim() });
+    if (existing) return res.status(409).json({ error: 'A member with this email already exists.' });
+
+    // Generate 8-char signup code
+    const signupCode = crypto.randomBytes(4).toString('hex');
+    const signupCodeHash = await bcrypt.hash(signupCode, 6);
+    const signupCodeExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
     const member = await Member.create({
       name,
-      category,
-      pin: pinHash,
-      adminId: req.admin.adminId,
+      email: email.toLowerCase().trim(),
+      category: category || 'FREE',
+      adminId: req.user.adminId,
+      signupCode: signupCodeHash,
+      signupCodeExpires,
     });
-    const { pin: _, gmailRefreshToken: __, ...safe } = member.toObject();
-    res.status(201).json(safe);
+
+    const { signupCode: _, gmailRefreshToken: __, passwordHash: ___, ...safe } = member.toObject();
+    res.status(201).json({ ...safe, signupCode });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -30,8 +43,8 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const members = await Member.find(
-      { adminId: req.admin.adminId },
-      '-pin -gmailRefreshToken'
+      { adminId: req.user.adminId },
+      '-signupCode -gmailRefreshToken -passwordHash'
     );
     res.json({ members });
   } catch (error) {
@@ -45,19 +58,6 @@ router.delete('/:memberId', async (req, res) => {
     await Member.findByIdAndDelete(req.params.memberId);
     await DailyLog.deleteMany({ memberId: req.params.memberId });
     res.json({ message: 'Member deleted' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST /:memberId/verify-pin
-router.post('/:memberId/verify-pin', async (req, res) => {
-  try {
-    const member = await Member.findById(req.params.memberId);
-    if (!member) return res.status(404).json({ error: 'Member not found' });
-
-    const valid = await bcrypt.compare(req.body.pin, member.pin);
-    res.json({ valid });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

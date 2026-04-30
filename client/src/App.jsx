@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import MemberPage from './pages/MemberPage';
 import HistoryPage from './pages/HistoryPage';
+import SignupPage from './pages/SignupPage';
 
 function ProtectedRoute({ children }) {
   const { admin } = useAuth();
@@ -14,6 +15,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route
         path="/dashboard"
         element={

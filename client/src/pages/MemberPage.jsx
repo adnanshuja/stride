@@ -40,11 +40,11 @@ export default function MemberPage() {
     if (!isAuthenticated) return;
     const fetchData = async () => {
       try {
-        const [membersRes, logRes] = await Promise.all([
-          api.get('/members').catch(() => null),
+        const [memberRes, logRes] = await Promise.all([
+          api.get(`/members/${memberId}`).catch(() => null),
           api.get(`/logs/today/${memberId}`),
         ]);
-        const m = membersRes?.data?.members?.find((m) => m._id === memberId);
+        const m = memberRes?.data;
         if (m) setMemberInfo(m);
         if (!m && !memberInfo) {
           setMemberInfo({ _id: memberId, name: 'Loading...', category: 'FREE' });

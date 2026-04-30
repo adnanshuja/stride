@@ -120,7 +120,7 @@ router.post('/admin/resend-code/:memberId', verifyToken, requireAdmin, async (re
     }
 
     const code = crypto.randomBytes(4).toString('hex');
-    const hash = await bcrypt.hash(code, 6);
+    const hash = await bcrypt.hash(code, 10);
 
     const member = await Member.findByIdAndUpdate(req.params.memberId, {
       signupCode: hash,

@@ -30,7 +30,7 @@ router.post('/update', verifyToken, async (req, res) => {
       }
     }
 
-    const entryText = isBreak ? 'Break' : update;
+    const entryText = isBreak ? (update ? `Break — ${update}` : 'Break') : update;
     const date = today();
     const hoursToFill = {};
     const spanLength = span ? Math.min(span, 10 - hour + 1) : 1;

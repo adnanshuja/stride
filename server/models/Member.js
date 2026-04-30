@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const MemberSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
   category: { type: String, enum: ['FREE', 'RESTRICTED'], default: 'FREE' },
   passwordHash: { type: String, default: null },
   signupCode: { type: String, default: null },

@@ -23,7 +23,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { adminId: admin._id, email: admin.email },
+      { adminId: admin._id, email: admin.email, role: 'admin' },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -39,7 +39,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const members = await Member.find(
-      { adminId: req.admin.adminId },
+      { adminId: req.user.adminId },
       'name category gmailEmail _id createdAt'
     );
 

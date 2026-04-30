@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
+const mongoose = require('mongoose');
 const { google } = require('googleapis');
 const Member = require('../models/Member');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { verifyToken, requireAdmin } = require('../middleware/auth');
 
 // GET /gmail/init/:memberId — redirect to Google consent
 router.get('/gmail/init/:memberId', async (req, res) => {
@@ -54,6 +57,10 @@ router.get('/gmail/callback', async (req, res) => {
 router.post('/member/signup', async (req, res) => {
   try {
     const { email, password, signupCode } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
 
     const member = await Member.findOne({ email: email.toLowerCase().trim() });
     if (!member) return res.status(404).json({ error: 'No member found with this email.' });
@@ -106,16 +113,21 @@ router.post('/member/login', async (req, res) => {
 });
 
 // POST /admin/resend-code/:memberId — Admin regenerates signup code
-router.post('/admin/resend-code/:memberId', async (req, res) => {
+router.post('/admin/resend-code/:memberId', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const crypto = require('crypto');
+    if (!mongoose.Types.ObjectId.isValid(req.params.memberId)) {
+      return res.status(400).json({ error: 'Invalid member ID.' });
+    }
+
     const code = crypto.randomBytes(4).toString('hex');
     const hash = await bcrypt.hash(code, 6);
 
-    await Member.findByIdAndUpdate(req.params.memberId, {
+    const member = await Member.findByIdAndUpdate(req.params.memberId, {
       signupCode: hash,
       signupCodeExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
+    }, { new: true });
+
+    if (!member) return res.status(404).json({ error: 'Member not found.' });
 
     res.json({ signupCode: code });
   } catch (error) {

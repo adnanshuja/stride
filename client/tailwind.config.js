@@ -18,9 +18,10 @@ export default {
           900: '#060713',
         },
         surface: {
-          DEFAULT: '#211F36',
+          DEFAULT: '#1A1C2E',
           light: '#616083',
           lighter: '#2A2944',
+          raised: '#211F36',
         },
         accent: {
           DEFAULT: '#51FAAA',

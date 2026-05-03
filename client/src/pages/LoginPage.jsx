@@ -37,18 +37,9 @@ export default function LoginPage() {
       {/* Grid pattern */}
       <div className="absolute inset-0 bg-grid opacity-40" />
 
-      {/* Ambient glow orbs — mint + magenta */}
-      <div className="absolute top-1/4 -left-32 w-[28rem] h-[28rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(81, 250, 170, 0.12) 0%, transparent 70%)', filter: 'blur(100px)', pointerEvents: 'none' }} />
-      <div className="absolute bottom-1/4 -right-32 w-[28rem] h-[28rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255, 129, 255, 0.1) 0%, transparent 70%)', filter: 'blur(100px)', pointerEvents: 'none' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(81, 250, 170, 0.05) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none' }} />
-
-      {/* Decorative floating rings */}
-      <div className="absolute top-1/3 left-16 w-72 h-72 rounded-full border border-white/[0.03] animate-float" />
-      <div className="absolute bottom-1/3 right-16 w-56 h-56 rounded-full border border-white/[0.03] animate-float" style={{ animationDelay: '-3s' }} />
-
       <div className="w-full max-w-sm relative">
         {/* Brand header */}
-        <div className="text-center mb-10 animate-fade-up">
+        <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#51FAAA]/10 border border-[#51FAAA]/20 mb-5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[#51FAAA]/10 to-transparent" />
             <LogIn className="relative w-7 h-7 text-[#51FAAA]" />
@@ -62,7 +53,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login card */}
-        <div className="glass rounded-2xl p-6 animate-slide-in-up">
+        <div className="glass rounded-2xl p-6">
           {/* Tabs */}
           <div className="flex mb-6 bg-white/[0.03] rounded-xl p-1 gap-0.5">
             <button

@@ -67,12 +67,9 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#0C0E1D]">
       <div className="noise-overlay" />
 
-      <div className="fixed top-1/4 -right-32 w-[30rem] h-[30rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(81, 250, 170, 0.08) 0%, transparent 70%)', filter: 'blur(120px)', pointerEvents: 'none' }} />
-      <div className="fixed bottom-1/4 -left-32 w-[26rem] h-[26rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255, 129, 255, 0.06) 0%, transparent 70%)', filter: 'blur(120px)', pointerEvents: 'none' }} />
-
       <Navbar />
       <div className="w-full px-6 lg:px-10 py-8 max-w-[90rem] mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 animate-fade-up">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <div>
               <p className="text-xs font-sans text-gray-500 tracking-widest uppercase mb-1">Overview</p>
@@ -111,7 +108,7 @@ export default function DashboardPage() {
 
         {/* Add member form */}
         {showForm && (
-          <div className="glass rounded-2xl p-6 mb-8 animate-slide-in-up">
+          <div className="glass rounded-2xl p-6 mb-8">
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Input
@@ -144,7 +141,7 @@ export default function DashboardPage() {
         )}
 
         {signupCode && (
-          <div className="glass rounded-2xl p-6 mb-8 animate-slide-in-up">
+          <div className="glass rounded-2xl p-6 mb-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-sans text-gray-500 tracking-widest uppercase mb-1">Member Created</p>
@@ -167,7 +164,7 @@ export default function DashboardPage() {
 
         {/* Members grid or empty state */}
         {!loading && members.length === 0 ? (
-          <div className="text-center py-24 animate-fade-up animate-stagger-2">
+          <div className="text-center py-24">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/[0.03] border border-white/[0.06] mb-5">
               <Users className="w-8 h-8 text-gray-600" />
             </div>
@@ -180,7 +177,7 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
             {members.map((m, i) => (
-              <div key={m._id} className="animate-fade-up" style={{ animationDelay: `${0.05 * (i + 2)}s` }}>
+              <div key={m._id}>
                 <MemberCard member={m} onRefresh={fetchDashboard} />
               </div>
             ))}

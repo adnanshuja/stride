@@ -49,7 +49,7 @@ export default function MemberCard({ member, onRefresh }) {
   };
 
   return (
-    <div className="group relative animate-fade-up">
+    <div className="group relative">
       {/* Card */}
       <div
         className={`relative rounded-2xl border ${
@@ -65,7 +65,7 @@ export default function MemberCard({ member, onRefresh }) {
           }`}
         />
 
-        <div className="p-5 pt-6 space-y-4">
+        <div className="p-4 pt-5 space-y-3">
           {/* Header */}
           <div className="flex items-start justify-between">
             <div className="space-y-1.5">
@@ -104,7 +104,7 @@ export default function MemberCard({ member, onRefresh }) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-1.5 flex-wrap pt-1">
+          <div className="flex gap-1 flex-wrap">
             {!hasGmail && (
               <Button
                 variant="outline"

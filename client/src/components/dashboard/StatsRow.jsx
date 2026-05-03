@@ -32,8 +32,7 @@ export default function StatsRow({ members }) {
         return (
           <div
             key={card.label}
-            className="glass rounded-2xl p-4 animate-fade-up"
-            style={{ animationDelay: `${0.05 * i}s` }}
+            className="glass rounded-2xl p-4"
           >
             <div className="flex items-center gap-2 mb-2">
               <Icon className="w-3.5 h-3.5 text-gray-500" />

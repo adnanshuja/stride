@@ -1,0 +1,28 @@
+- generic [ref=e2]:
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - img [ref=e11]
+      - heading "StrideSync" [level=1] [ref=e14]
+      - paragraph [ref=e15]: Track together. Grow together.
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - button "Admin" [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+          - text: Admin
+        - button "Member" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+          - text: Member
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - text: Email
+          - textbox "admin@stridesync.com" [ref=e28]
+        - generic [ref=e29]:
+          - text: Password
+          - textbox "••••••••" [ref=e30]
+        - button "Enter" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]:
+            - text: Enter
+            - img [ref=e33]
+        - paragraph [ref=e35]: First login creates admin account
+  - region "Notifications (F8)":
+    - list

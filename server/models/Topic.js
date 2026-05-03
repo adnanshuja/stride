@@ -5,6 +5,9 @@ const TopicSchema = new mongoose.Schema({
   name: { type: String, required: true },
   notes: { type: String, default: '' },
   order: { type: Number, default: 0 },
+  status: { type: String, enum: ['active', 'completed'], default: 'active' },
+  completedAt: { type: Date, default: null },
+  timeSpent: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 

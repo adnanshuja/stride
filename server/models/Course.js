@@ -8,6 +8,8 @@ const CourseSchema = new mongoose.Schema({
   completedAt: { type: Date, default: null },
   completedComment: { type: String, default: '' },
   totalTopics: { type: Number, default: 0 },
+  completedTopics: { type: Number, default: 0 },
+  totalCourseMinutes: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 

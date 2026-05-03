@@ -4,6 +4,14 @@ const Course = require('../models/Course');
 const Topic = require('../models/Topic');
 const { verifyToken } = require('../middleware/auth');
 
+async function recalcCourseMinutes(courseId) {
+  const result = await Topic.aggregate([
+    { $match: { courseId: new (require('mongoose').Types.ObjectId)(courseId) } },
+    { $group: { _id: null, total: { $sum: '$timeSpent' } } },
+  ]);
+  await Course.findByIdAndUpdate(courseId, { totalCourseMinutes: result[0]?.total || 0 });
+}
+
 // GET /:memberId — List all courses for a member
 router.get('/:memberId', verifyToken, async (req, res) => {
   try {
@@ -94,6 +102,34 @@ router.post('/:courseId/topics', verifyToken, async (req, res) => {
   }
 });
 
+// PUT /:courseId/topics/:topicId — Update a topic
+router.put('/:courseId/topics/:topicId', verifyToken, async (req, res) => {
+  try {
+    const updates = {};
+    const allowedFields = ['name', 'notes', 'status', 'timeSpent'];
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    const currentTopic = await Topic.findById(req.params.topicId);
+    if (!currentTopic) return res.status(404).json({ error: 'Topic not found' });
+
+    if (updates.status === 'completed' && currentTopic.status !== 'completed') {
+      updates.completedAt = new Date();
+      await Course.findByIdAndUpdate(req.params.courseId, { $inc: { completedTopics: 1 } });
+    } else if (updates.status === 'active' && currentTopic.status === 'completed') {
+      updates.completedAt = null;
+      await Course.findByIdAndUpdate(req.params.courseId, { $inc: { completedTopics: -1 } });
+    }
+
+    const topic = await Topic.findByIdAndUpdate(req.params.topicId, updates, { new: true });
+    await recalcCourseMinutes(req.params.courseId);
+    res.json(topic);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DELETE /:courseId/topics/:topicId — Delete a topic
 router.delete('/:courseId/topics/:topicId', verifyToken, async (req, res) => {
   try {
@@ -101,9 +137,16 @@ router.delete('/:courseId/topics/:topicId', verifyToken, async (req, res) => {
     if (!topic) return res.status(404).json({ error: 'Topic not found' });
 
     const course = await Course.findById(req.params.courseId);
-    if (course && course.totalTopics > 0) {
-      await Course.findByIdAndUpdate(req.params.courseId, { totalTopics: course.totalTopics - 1 });
+    if (course) {
+      const updateFields = {};
+      if (course.totalTopics > 0) updateFields.totalTopics = course.totalTopics - 1;
+      if (topic.status === 'completed' && course.completedTopics > 0) {
+        updateFields.completedTopics = course.completedTopics - 1;
+      }
+      await Course.findByIdAndUpdate(req.params.courseId, updateFields);
     }
+
+    await recalcCourseMinutes(req.params.courseId);
 
     res.json({ message: 'Topic deleted' });
   } catch (error) {

@@ -117,6 +117,13 @@ export default function MemberPage() {
   const hours = todayLog?.hours || {};
   const courseHours = todayLog?.courseHours || {};
   const maxSlots = 10 + (todayLog?.breakCount || 0);
+  const totalCourseMinutes = courses.reduce((sum, c) => sum + (c.totalCourseMinutes || 0), 0);
+  const formatMinutes = (mins) => {
+    if (!mins || mins <= 0) return '';
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
 
   const startedAtHour = todayLog?.startedAt
     ? parseInt(todayLog.startedAt.split(':')[0], 10)
@@ -246,6 +253,13 @@ export default function MemberPage() {
               {todayLog?.startedAt && (
                 <div className="text-sm text-[#51FAAA] font-medium mb-2">
                   Started at {formatTime(todayLog.startedAt)}
+                </div>
+              )}
+
+              {/* Daily stats */}
+              {totalCourseMinutes > 0 && (
+                <div className="text-[11px] text-gray-500 font-mono mb-3">
+                  {formatMinutes(totalCourseMinutes)} course work · {Object.keys(hours).length}/{maxSlots}h
                 </div>
               )}
 

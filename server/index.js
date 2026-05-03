@@ -34,6 +34,15 @@ app.use('/api/scan', scanRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/jobs', jobRoutes);
 
+// Serve built frontend in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`StrideSync server running on port ${PORT}`);
 });

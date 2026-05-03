@@ -4,7 +4,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from './ui/toast';
-import { BookOpen, CheckCircle, Plus, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { BookOpen, CheckCircle, Circle, Plus, ChevronDown, ChevronRight, Trash2, Clock } from 'lucide-react';
 
 export default function CoursesSection({ memberId, courseHours = {} }) {
   const { addToast } = useToast();
@@ -28,6 +28,16 @@ export default function CoursesSection({ memberId, courseHours = {} }) {
   // Mark complete
   const [completingId, setCompletingId] = useState(null);
   const [completeComment, setCompleteComment] = useState('');
+
+  // Editing time per topic
+  const [editingTime, setEditingTime] = useState({});
+
+  const formatMinutes = (mins) => {
+    if (!mins || mins <= 0) return '';
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
 
   // Count hours per course from today's courseHours
   const courseHoursCount = {};
@@ -125,6 +135,16 @@ export default function CoursesSection({ memberId, courseHours = {} }) {
     }
   };
 
+  const handleUpdateTopic = async (courseId, topicId, updates) => {
+    try {
+      await api.put(`/courses/${courseId}/topics/${topicId}`, updates);
+      fetchTopics(courseId);
+      fetchCourses();
+    } catch (err) {
+      addToast('Failed to update topic', 'error');
+    }
+  };
+
   const handleMarkComplete = async (courseId) => {
     if (!completeComment.trim()) return;
     try {
@@ -164,6 +184,17 @@ export default function CoursesSection({ memberId, courseHours = {} }) {
         <div className="flex items-center gap-2">
           <BookOpen className="w-3.5 h-3.5 text-gray-500" />
           <span className="font-sans text-xs text-gray-500 tracking-widest uppercase">Courses</span>
+          {courses.length > 0 && (() => {
+            const totalMins = courses.reduce((s, c) => s + (c.totalCourseMinutes || 0), 0);
+            const totalH = Math.floor(totalMins / 60);
+            const totalM = totalMins % 60;
+            if (!totalMins) return null;
+            return (
+              <span className="text-[11px] text-gray-600 font-mono ml-1">
+                {totalH > 0 ? `${totalH}h ${totalM}m` : `${totalM}m`}
+              </span>
+            );
+          })()}
         </div>
         <Button variant="ghost" size="sm" onClick={() => setShowAdd(!showAdd)} className="text-xs gap-1">
           <Plus className="w-3 h-3" />
@@ -242,6 +273,16 @@ export default function CoursesSection({ memberId, courseHours = {} }) {
                   )}
                   <p className="text-[11px] text-gray-600 mt-1">
                     {course.totalTopics} topic{course.totalTopics !== 1 ? 's' : ''}
+                    {course.completedTopics > 0 && (
+                      <span className="text-[#51FAAA] ml-1">
+                        · {course.completedTopics}/{course.totalTopics} done
+                      </span>
+                    )}
+                    {course.totalCourseMinutes > 0 && (
+                      <span className="text-gray-500 ml-1">
+                        · {formatMinutes(course.totalCourseMinutes)} total
+                      </span>
+                    )}
                     {courseHoursCount[course._id] > 0 && (
                       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#51FAAA]/10 text-[#51FAAA] text-[11px] font-mono font-medium ml-2" title={`${courseHoursCount[course._id]}h today`}>
                         {courseHoursCount[course._id]}h
@@ -263,27 +304,78 @@ export default function CoursesSection({ memberId, courseHours = {} }) {
                     </div>
                   ) : topics.length > 0 ? (
                     <div className="space-y-1.5">
-                      {topics.map((topic) => (
-                        <div
-                          key={topic._id}
-                          className="flex items-start gap-3 rounded-xl bg-white/[0.02] border border-white/[0.04] p-3"
-                        >
-                          <span className="text-[11px] text-gray-600 font-mono mt-0.5 shrink-0 w-4">{topic.order + 1}.</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm text-white/80 font-medium">{topic.name}</span>
-                            {topic.notes && (
-                              <p className="text-xs text-gray-500 mt-0.5">{topic.notes}</p>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => handleDeleteTopic(course._id, topic._id)}
-                            className="shrink-0 p-1 rounded-lg hover:bg-rose-500/10 text-gray-600 hover:text-rose-400 transition-colors"
-                            title="Delete topic"
+                      {topics.map((topic) => {
+                        const topicCompleted = topic.status === 'completed';
+                        return (
+                          <div
+                            key={topic._id}
+                            className={`flex items-start gap-3 rounded-xl border p-3 transition-all ${
+                              topicCompleted
+                                ? 'bg-[#51FAAA]/[0.03] border-[#51FAAA]/10'
+                                : 'bg-white/[0.02] border-white/[0.04]'
+                            }`}
                           >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                            {/* Status toggle */}
+                            <button
+                              onClick={() => handleUpdateTopic(course._id, topic._id, {
+                                status: topicCompleted ? 'active' : 'completed'
+                              })}
+                              className="shrink-0 mt-0.5 p-0.5 rounded-full hover:bg-white/[0.05] transition-colors"
+                              title={topicCompleted ? 'Mark active' : 'Mark complete'}
+                            >
+                              {topicCompleted ? (
+                                <CheckCircle className="w-4 h-4 text-[#51FAAA]" />
+                              ) : (
+                                <Circle className="w-4 h-4 text-gray-600" />
+                              )}
+                            </button>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <span className={`text-sm font-medium transition-all ${
+                                topicCompleted ? 'text-white/40 line-through' : 'text-white/80'
+                              }`}>
+                                {topic.name}
+                              </span>
+                              {topic.notes && (
+                                <p className={`text-xs mt-0.5 ${
+                                  topicCompleted ? 'text-gray-600' : 'text-gray-500'
+                                }`}>{topic.notes}</p>
+                              )}
+                            </div>
+
+                            {/* Time spent */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Clock className={`w-3 h-3 ${topicCompleted ? 'text-[#51FAAA]/60' : 'text-gray-600'}`} />
+                              <input
+                                type="number"
+                                min="0"
+                                value={editingTime[topic._id] !== undefined ? editingTime[topic._id] : topic.timeSpent || 0}
+                                onChange={(e) => setEditingTime((prev) => ({ ...prev, [topic._id]: e.target.value }))}
+                                onBlur={() => {
+                                  const val = parseInt(editingTime[topic._id]) || 0;
+                                  if (editingTime[topic._id] !== undefined && val !== (topic.timeSpent || 0)) {
+                                    handleUpdateTopic(course._id, topic._id, { timeSpent: val });
+                                  }
+                                  setEditingTime((prev) => { const next = { ...prev }; delete next[topic._id]; return next; });
+                                }}
+                                className="w-12 bg-transparent text-xs text-gray-400 font-mono text-center focus:outline-none focus:text-white border-b border-transparent focus:border-gray-600 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="0"
+                              />
+                              <span className="text-[10px] text-gray-600 font-sans">min</span>
+                            </div>
+
+                            {/* Delete */}
+                            <button
+                              onClick={() => handleDeleteTopic(course._id, topic._id)}
+                              className="shrink-0 p-1 rounded-lg hover:bg-rose-500/10 text-gray-600 hover:text-rose-400 transition-colors"
+                              title="Delete topic"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-xs text-gray-600 text-center py-2">No topics yet</p>
@@ -386,7 +478,7 @@ export default function CoursesSection({ memberId, courseHours = {} }) {
                         maxLength={500}
                       />
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={handleMarkComplete} disabled={!completeComment.trim()}>
+                        <Button size="sm" onClick={() => handleMarkComplete(course._id)} disabled={!completeComment.trim()}>
                           Confirm Complete
                         </Button>
                         <Button

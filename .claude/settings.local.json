@@ -50,7 +50,10 @@
       "Bash(npm install *)",
       "Bash(npm run *)",
       "Bash(\"C:/Users/GAMING/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/stop-server.sh\" \"C:/Users/GAMING/OneDrive/Documents/stridesync/.superpowers/brainstorm/2319-1777537226\")",
-      "Bash(npm *)"
+      "Bash(npm *)",
+      "Bash(openssl rand *)",
+      "Bash(mkdir -p \"D:/projects\")",
+      "Bash(mv \"C:/Users/GAMING/OneDrive/Documents/andrej-karpathy-skills\" \"D:/projects/andrej-karpathy-skills\")"
     ],
     "deny": []
   },

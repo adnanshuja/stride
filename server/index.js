@@ -6,7 +6,17 @@ const connectDB = require('./config/db');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-connectDB();
+// Start connecting immediately; await in middleware for non-health routes
+const dbReady = connectDB().catch((err) => {
+  console.error('MongoDB connection failed:', err.message);
+});
+
+app.use((req, res, next) => {
+  if (req.path === '/api/health') return next();
+  dbReady.then(() => next()).catch(() =>
+    res.status(503).json({ error: 'Database not available' })
+  );
+});
 
 app.use(cors());
 app.use(express.json());
@@ -34,8 +44,8 @@ app.use('/api/scan', scanRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/jobs', jobRoutes);
 
-// Serve built frontend in production
-if (process.env.NODE_ENV === 'production') {
+// Serve built frontend in local production
+if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
   const path = require('path');
   app.use(express.static(path.join(__dirname, '../client/dist')));
   app.get('*', (req, res) => {

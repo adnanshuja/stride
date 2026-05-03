@@ -6,11 +6,26 @@
 |------|-------|------------|
 | LoginPage | `/` | idle, loading, error |
 | SignupPage | `/signup` | form, success+redirect |
-| DashboardPage | `/dashboard` | loading, empty(CTA), populated(cards grid) |
+| DashboardPage | `/dashboard` | loading(skeleton), empty(CTA), populated(stats+trends+grid) |
 | MemberPage | `/member/:memberId` | member header, FocusInput, timeline, ScanButton |
 | HistoryPage | `/history` | initial(pick member+date), empty, populated |
 
-## Components
+## Layout
+- All pages: `w-full px-6 lg:px-10` with responsive `max-w` per page
+- Dashboard: `max-w-[90rem]` (full width)
+- MemberPage: `max-w-4xl`, HistoryPage: `max-w-5xl`
+- Navbar: `max-w-[90rem]` sticky pill
+
+## Dashboard-only Components (`dashboard/`)
+
+| Component | Purpose |
+|-----------|---------|
+| StatsRow | 6-card stats row (Members, Hours, Completion, Gmail, FREE/RESTRICTED, Active) |
+| WeeklyMiniBars | 7-day CSS bar chart from `/admin/dashboard/weekly` |
+| ActivityHighlights | Auto-detected Gmail/LinkedIn feed from todayLog data |
+| TeamRing | Inline SVG donut showing team completion % |
+
+## Shared Components
 
 | Component | Purpose |
 |-----------|---------|

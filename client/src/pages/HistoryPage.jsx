@@ -56,7 +56,7 @@ export default function HistoryPage() {
       <div className="fixed bottom-1/4 -right-32 w-[24rem] h-[24rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255, 129, 255, 0.05) 0%, transparent 70%)', filter: 'blur(120px)', pointerEvents: 'none' }} />
 
       <Navbar />
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <div className="w-full px-6 lg:px-10 py-8 max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center gap-4 animate-fade-up">
           <a

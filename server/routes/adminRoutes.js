@@ -59,4 +59,28 @@ router.get('/dashboard', verifyToken, async (req, res) => {
   }
 });
 
+// GET /dashboard/weekly — last 7 days aggregation (protected)
+router.get('/dashboard/weekly', verifyToken, async (req, res) => {
+  try {
+    const members = await Member.find({ adminId: req.user.adminId }, '_id');
+    const memberIds = members.map((m) => m._id);
+
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+
+      const logs = await DailyLog.find({ memberId: { $in: memberIds }, date: dateStr }).lean();
+      const totalHours = logs.reduce((sum, log) => sum + Object.keys(log.hours || {}).length, 0);
+
+      days.push({ date: dateStr, totalHours, memberCount: logs.length });
+    }
+
+    res.json({ days });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

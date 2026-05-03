@@ -7,3 +7,5 @@ build/
 *.log
 .superpowers/
 .claude/settings.local.json
+
+.vercel

@@ -188,7 +188,7 @@ export default function MemberPage() {
       <div className="fixed bottom-1/3 -left-32 w-[24rem] h-[24rem] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255, 129, 255, 0.06) 0%, transparent 70%)', filter: 'blur(120px)', pointerEvents: 'none' }} />
 
       <Navbar />
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+      <div className="w-full px-6 lg:px-10 py-8 max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4 animate-fade-up">
           <Link to="/" className="w-9 h-9 rounded-full border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.04] transition-all">

@@ -19,7 +19,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-4 z-50 mx-auto max-w-6xl px-4">
+    <nav className="sticky top-4 z-50 mx-auto max-w-[90rem] px-4">
       <div className="glass-strong rounded-full px-6 h-14 flex items-center justify-between">
         <div
           className="flex items-center gap-3 cursor-pointer select-none"

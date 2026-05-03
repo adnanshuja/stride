@@ -43,6 +43,10 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`StrideSync server running on port ${PORT}`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`StrideSync server running on port ${PORT}`);
+  });
+}

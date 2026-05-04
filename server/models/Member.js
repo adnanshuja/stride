@@ -5,8 +5,6 @@ const MemberSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   category: { type: String, enum: ['FREE', 'RESTRICTED'], default: 'FREE' },
   passwordHash: { type: String, default: null },
-  signupCode: { type: String, default: null },
-  signupCodeExpires: { type: Date, default: null },
   isActive: { type: Boolean, default: false },
   emailVerified: { type: Boolean, default: false },
   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },

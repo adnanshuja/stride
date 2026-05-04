@@ -14,14 +14,16 @@ GET  /api/auth/gmail/callback              — none — stores refreshToken, red
 
 ## Admin (verifyToken + requireAdmin)
 ```
-GET    /api/admin/dashboard             — all members + today's log + courseStats each
-GET    /api/admin/dashboard/weekly      — last 7 days hours aggregation {days}
-GET    /api/admin/dashboard/jobs        — aggregated job stats {totalApplications, thisWeek, byStatus, bySource, weeklyTrend, perMember}
-GET    /api/admin/activity/:memberId    — date-ranged logs, query: start, end (YYYY-MM-DD)
-POST   /api/members                     — create member, body: {name,email,category}
-GET    /api/members                     — list all members
-GET    /api/members/:memberId           — single member
-DELETE /api/members/:memberId           — delete member + all logs
+GET    /api/admin/dashboard                 — all members + today's log + courseStats each
+GET    /api/admin/dashboard/weekly          — last 7 days hours aggregation {days}
+GET    /api/admin/dashboard/jobs            — aggregated job stats {totalApplications, thisWeek, byStatus, bySource, weeklyTrend, perMember}
+GET    /api/admin/activity/:memberId        — date-ranged logs, query: start, end (YYYY-MM-DD)
+GET    /api/admin/signup-code               — get current shared signup code (plaintext) + expiresAt
+POST   /api/admin/signup-code/regenerate    — regenerate shared code, returns {signupCode, expiresAt}
+POST   /api/members                         — create member (no per-member code), body: {name,email,category}
+GET    /api/members                         — list all members
+GET    /api/members/:memberId               — single member
+DELETE /api/members/:memberId               — delete member + all logs
 ```
 
 ## Logs (verifyToken)

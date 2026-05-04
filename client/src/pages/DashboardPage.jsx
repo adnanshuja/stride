@@ -21,7 +21,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
-  const [signupCode, setSignupCode] = useState(null);
+  const [sharedCode, setSharedCode] = useState(null);
+  const [sharedCodeExpires, setSharedCodeExpires] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', category: 'FREE' });
   const { addToast } = useToast();
   const navigate = useNavigate();
@@ -29,12 +30,15 @@ export default function DashboardPage() {
   const fetchDashboard = async () => {
     setLoading(true);
     try {
-      const [dashRes, jobsRes] = await Promise.all([
+      const [dashRes, jobsRes, codeRes] = await Promise.all([
         api.get('/admin/dashboard'),
         api.get('/admin/dashboard/jobs').catch(() => null),
+        api.get('/admin/signup-code'),
       ]);
       setMembers(dashRes.data.members);
       if (jobsRes) setJobsData(jobsRes.data);
+      setSharedCode(codeRes.data.signupCode);
+      setSharedCodeExpires(codeRes.data.expiresAt);
     } catch {
       // handled by error boundary
     } finally {
@@ -43,6 +47,17 @@ export default function DashboardPage() {
   };
 
   useEffect(() => { fetchDashboard(); }, []);
+
+  const handleRegenerateCode = async () => {
+    try {
+      const res = await api.post('/admin/signup-code/regenerate');
+      setSharedCode(res.data.signupCode);
+      setSharedCodeExpires(res.data.expiresAt);
+      addToast('New signup code generated!', 'success');
+    } catch {
+      addToast('Failed to regenerate code', 'error');
+    }
+  };
 
   const gmailConnected = searchParams.get('gmailConnected') === 'true';
   useEffect(() => {
@@ -55,10 +70,9 @@ export default function DashboardPage() {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post('/members', form);
+      await api.post('/members', form);
       setForm({ name: '', email: '', category: 'FREE' });
       setShowForm(false);
-      setSignupCode(res.data.signupCode);
       fetchDashboard();
       addToast('Member added successfully', 'success');
     } catch (err) {
@@ -96,6 +110,30 @@ export default function DashboardPage() {
             {showForm ? 'Cancel' : 'Add Member'}
           </Button>
         </div>
+
+        {/* Shared signup code banner */}
+        {sharedCode && (
+          <div className="glass rounded-2xl p-6 mb-8">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <p className="text-xs font-sans text-gray-500 tracking-widest uppercase mb-1">Shared Signup Code</p>
+                <p className="text-xs text-gray-500 font-sans mb-2">Share this code with new members so they can create their accounts</p>
+                <code className="font-mono text-xl text-[#51FAAA] bg-white/[0.04] px-4 py-2 rounded-lg border border-white/[0.06] select-all">{sharedCode}</code>
+                {sharedCodeExpires && (
+                  <p className="text-xs text-gray-500 font-sans mt-2">Expires: {new Date(sharedCodeExpires).toLocaleDateString()}</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(sharedCode); addToast('Signup code copied!', 'success', 2000); }}>
+                  Copy
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleRegenerateCode}>
+                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" />Regenerate
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats + Ring */}
         {members.length > 0 && (
@@ -152,19 +190,6 @@ export default function DashboardPage() {
                 <Button type="submit"><Check className="w-4 h-4 mr-1.5" />Add Member</Button>
               </div>
             </form>
-          </div>
-        )}
-
-        {signupCode && (
-          <div className="glass rounded-2xl p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-sans text-gray-500 tracking-widest uppercase mb-1">Member Created</p>
-                <p className="text-sm text-gray-400 font-sans mb-2">Share this signup code with the member:</p>
-                <code className="font-mono text-xl text-[#51FAAA] bg-white/[0.04] px-4 py-2 rounded-lg border border-white/[0.06] select-all">{signupCode}</code>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(signupCode); addToast('Signup code copied!', 'success', 2000); }}>Copy</Button>
-            </div>
           </div>
         )}
 

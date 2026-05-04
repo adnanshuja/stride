@@ -20,9 +20,10 @@ router.post('/login', async (req, res) => {
       if (adminExists > 0) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
-      // First ever admin — bootstrap
+      // First ever admin — bootstrap with initial signup code
       const passwordHash = await bcrypt.hash(password, 10);
       admin = await Admin.create({ email, passwordHash });
+      await admin.generateSignupCode();
     } else {
       const valid = await bcrypt.compare(password, admin.passwordHash);
       if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
@@ -210,6 +211,32 @@ router.get('/activity/:memberId', verifyToken, requireAdmin, async (req, res) =>
         endDate: end,
       },
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /signup-code — Get current shared signup code
+router.get('/signup-code', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.adminId, 'signupCodeDisplay signupCodeExpires');
+    if (!admin) return res.status(404).json({ error: 'Admin not found.' });
+    res.json({
+      signupCode: admin.signupCodeDisplay,
+      expiresAt: admin.signupCodeExpires,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /signup-code/regenerate — Regenerate shared signup code
+router.post('/signup-code/regenerate', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.adminId);
+    if (!admin) return res.status(404).json({ error: 'Admin not found.' });
+    const code = await admin.generateSignupCode();
+    res.json({ signupCode: code, expiresAt: admin.signupCodeExpires });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

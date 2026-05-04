@@ -5,7 +5,12 @@
 |-------|------|-------|
 | email | String | required, unique |
 | passwordHash | String | required |
+| signupCode | String | bcrypt hash, nullable |
+| signupCodeDisplay | String | plaintext for admin to view/share, nullable |
+| signupCodeExpires | Date | nullable, 7d expiry |
 | createdAt | Date | auto |
+
+Admin has `generateSignupCode()` method: generates 8-char hex code, stores both bcrypt hash + plaintext display, sets 7d expiry. Returns plaintext code.
 
 ## Member (`models/Member.js`)
 | Field | Type | Notes |
@@ -14,8 +19,6 @@
 | email | String | required, unique, lowercase |
 | category | String | enum: FREE, RESTRICTED |
 | passwordHash | String | nullable |
-| signupCode | String | bcrypt hash, nullable |
-| signupCodeExpires | Date | nullable, 7d expiry |
 | isActive | Boolean | default: false |
 | emailVerified | Boolean | default: false |
 | adminId | ObjectId | ref: Admin |

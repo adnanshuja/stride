@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { google } = require('googleapis');
 const Member = require('../models/Member');
+const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
@@ -66,20 +66,21 @@ router.post('/member/signup', async (req, res) => {
     const member = await Member.findOne({ email: email.toLowerCase().trim() });
     if (!member) return res.status(404).json({ error: 'No member found with this email.' });
     if (member.isActive) return res.status(400).json({ error: 'Already registered. Please log in.' });
-    if (!member.signupCode || !member.signupCodeExpires) {
-      return res.status(400).json({ error: 'No signup code issued. Contact your admin.' });
+
+    // Validate against admin's shared signup code
+    const admin = await Admin.findById(member.adminId);
+    if (!admin || !admin.signupCode || !admin.signupCodeExpires) {
+      return res.status(400).json({ error: 'No signup code configured. Contact your admin.' });
     }
-    if (new Date() > member.signupCodeExpires) {
+    if (new Date() > admin.signupCodeExpires) {
       return res.status(400).json({ error: 'Signup code expired. Contact your admin for a new one.' });
     }
 
-    const valid = await bcrypt.compare(signupCode, member.signupCode);
+    const valid = await bcrypt.compare(signupCode, admin.signupCode);
     if (!valid) return res.status(401).json({ error: 'Invalid signup code.' });
 
     const passwordHash = await bcrypt.hash(password, 10);
     member.passwordHash = passwordHash;
-    member.signupCode = null;
-    member.signupCodeExpires = null;
     member.isActive = true;
     member.emailVerified = true;
     await member.save();
@@ -114,25 +115,20 @@ router.post('/member/login', async (req, res) => {
   }
 });
 
-// POST /admin/resend-code/:memberId — Admin regenerates signup code
+// POST /admin/resend-code/:memberId — Admin regenerates shared signup code (memberId kept for compat)
 router.post('/admin/resend-code/:memberId', verifyToken, requireAdmin, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.memberId)) {
       return res.status(400).json({ error: 'Invalid member ID.' });
     }
 
-    const code = crypto.randomBytes(4).toString('hex');
-    const hash = await bcrypt.hash(code, 10);
+    const admin = await Admin.findById(req.user.adminId);
+    if (!admin) return res.status(404).json({ error: 'Admin not found.' });
 
-    const member = await Member.findByIdAndUpdate(req.params.memberId, {
-      signupCode: hash,
-      signupCodeExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    }, { new: true });
+    const code = await admin.generateSignupCode();
 
-    if (!member) return res.status(404).json({ error: 'Member not found.' });
-
-    // Optionally send signup code via email (no-op if SMTP not configured)
-    sendSignupCode(member.email, code);
+    const member = await Member.findById(req.params.memberId);
+    if (member) sendSignupCode(member.email, code);
 
     res.json({ signupCode: code });
   } catch (error) {

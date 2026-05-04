@@ -12,4 +12,5 @@ API: `import api from 'api/axios.js'` — auto JWT, always try/catch
 Icons: lucide-react, w-4 h-4 default
 Pages: Login(/) Signup(/signup) Dashboard(/dashboard) Member(/member/:id) History(/history)
 Layout: w-full px-6 lg:px-10 max-w-[90rem] | nav: max-w-[90rem] sticky pill
-Dashboard sections: StatsRow + WeeklyMiniBars + ActivityHighlights + TeamRing + MemberCards
+Dashboard sections: StatsRow(7 cards, incl. Applications) + WeeklyMiniBars + WeeklyJobsBar + JobsPipeline + ActivityHighlights + TeamRing + MemberCards
+MemberPage: log entries (#1, #2, ...) with add/edit — NO 10-slot timeline

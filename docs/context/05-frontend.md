@@ -6,8 +6,8 @@
 |------|-------|------------|
 | LoginPage | `/` | idle, loading, error |
 | SignupPage | `/signup` | form, success+redirect |
-| DashboardPage | `/dashboard` | loading(skeleton), empty(CTA), populated(stats+trends+grid) |
-| MemberPage | `/member/:memberId` | member header, FocusInput, timeline, ScanButton |
+| DashboardPage | `/dashboard` | loading(skeleton), empty(CTA), populated(stats+pipeline+bars+grid) |
+| MemberPage | `/member/:memberId` | member header, FocusInput, log entries with add/edit, ScanButton |
 | HistoryPage | `/history` | initial(pick member+date), empty, populated |
 
 ## Layout
@@ -20,8 +20,10 @@
 
 | Component | Purpose |
 |-----------|---------|
-| StatsRow | 6-card stats row (Members, Hours, Completion, Gmail, FREE/RESTRICTED, Active) |
-| WeeklyMiniBars | 7-day CSS bar chart from `/admin/dashboard/weekly` |
+| StatsRow | 7-card stats row (Members, Hours, Completion, Gmail, FREE/RESTRICTED, Active, Applications) |
+| WeeklyMiniBars | 7-day CSS bar chart (hours) from `/admin/dashboard/weekly` |
+| WeeklyJobsBar | 7-day CSS bar chart (job apps) from `/admin/dashboard/jobs` |
+| JobsPipeline | Stacked bar funnel (applied→interviewed→offered→rejected) with conversion rates |
 | ActivityHighlights | Auto-detected Gmail/LinkedIn feed from todayLog data |
 | TeamRing | Inline SVG donut showing team completion % |
 
@@ -31,22 +33,11 @@
 |-----------|---------|
 | Navbar | Sticky pill nav, glass-strong, Dashboard+History links, admin email, logout |
 | MemberCard | Accent bar (mint=FREE, magenta=RESTRICTED), progress, Gmail status, actions |
-| TimelineSlot | Single slot — 4 states: done/missed/current/future (see below) |
-| SpanBlock | Merged consecutive identical slot entries |
-| BreakSlot | Break entry with editable note |
 | SlotEditor | Textarea + span selector for logging |
 | ScanButton | RESTRICTED only — idle/scanning/results/needs-auth states |
 | FocusInput | Quick focus/status input at top of MemberPage |
 | MemberHistory | Recent history display |
 | QuickActions | Chip shortcuts for common log entries |
-
-## TimelineSlot states
-- `done` — green border, check icon, text, "Logged" badge
-- `missed` — rose border, X icon, "No entry", "Missed" badge
-- `current` — mint ring, pulsing dot, textarea + Send, "Now" badge
-- `future` — dimmed, circle icon, "Upcoming" badge
-
-Current slot = dynamic based on `startedAt` — NOT `Math.max(1, Math.min(10, currentHour - 7))`
 
 ## UI Components (`client/src/components/ui/`)
 All Radix UI primitives, dark theme.

@@ -5,16 +5,21 @@ const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const Member = require('../models/Member');
 const DailyLog = require('../models/DailyLog');
-const { verifyToken } = require('../middleware/auth');
+const JobApplication = require('../models/JobApplication');
+const { verifyToken, requireAdmin } = require('../middleware/auth');
 
-// POST /login — bootstrap: first login creates admin
+// POST /login — bootstrap only when no admin exists at all
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const adminExists = await Admin.countDocuments();
     let admin = await Admin.findOne({ email });
 
     if (!admin) {
-      // First run — create admin
+      if (adminExists > 0) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      // First ever admin — bootstrap
       const passwordHash = await bcrypt.hash(password, 10);
       admin = await Admin.create({ email, passwordHash });
     } else {
@@ -34,8 +39,8 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /dashboard — all members with today's log (protected)
-router.get('/dashboard', verifyToken, async (req, res) => {
+// GET /dashboard — all members with today's log (admin only)
+router.get('/dashboard', verifyToken, requireAdmin, async (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const members = await Member.find(
@@ -59,8 +64,8 @@ router.get('/dashboard', verifyToken, async (req, res) => {
   }
 });
 
-// GET /dashboard/weekly — last 7 days aggregation (protected)
-router.get('/dashboard/weekly', verifyToken, async (req, res) => {
+// GET /dashboard/weekly — last 7 days aggregation (admin only)
+router.get('/dashboard/weekly', verifyToken, requireAdmin, async (req, res) => {
   try {
     const members = await Member.find({ adminId: req.user.adminId }, '_id');
     const memberIds = members.map((m) => m._id);
@@ -78,6 +83,63 @@ router.get('/dashboard/weekly', verifyToken, async (req, res) => {
     }
 
     res.json({ days });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /dashboard/jobs — aggregated job application stats (admin only)
+router.get('/dashboard/jobs', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const members = await Member.find({ adminId: req.user.adminId }, '_id name');
+    const memberIds = members.map((m) => m._id);
+
+    const jobs = await JobApplication.find({ memberId: { $in: memberIds } }).lean();
+
+    const byStatus = { applied: 0, interviewed: 0, rejected: 0, offered: 0 };
+    const bySource = { linkedin: 0, gmail: 0, direct: 0, link: 0 };
+    const perMemberMap = {};
+
+    members.forEach((m) => {
+      perMemberMap[m._id.toString()] = {
+        _id: m._id, name: m.name, total: 0, applied: 0, interviewed: 0, rejected: 0, offered: 0,
+      };
+    });
+
+    jobs.forEach((job) => {
+      if (byStatus[job.status] !== undefined) byStatus[job.status]++;
+      if (bySource[job.source] !== undefined) bySource[job.source]++;
+
+      const mid = job.memberId.toString();
+      if (perMemberMap[mid]) {
+        perMemberMap[mid].total++;
+        perMemberMap[mid][job.status]++;
+      }
+    });
+
+    // 7-day weekly trend
+    const weeklyTrend = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      weeklyTrend.push({ date: dateStr, count: jobs.filter((j) => j.date === dateStr).length });
+    }
+
+    // This week (Mon–today)
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const thisWeek = jobs.filter((j) => j.date >= weekStart.toISOString().slice(0, 10)).length;
+
+    res.json({
+      totalApplications: jobs.length,
+      thisWeek,
+      byStatus,
+      bySource,
+      weeklyTrend,
+      perMember: Object.values(perMemberMap),
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -320,8 +320,8 @@ export default function CoursesSection({ memberId, courseHours = {} }) {
                               onClick={() => handleUpdateTopic(course._id, topic._id, {
                                 status: topicCompleted ? 'active' : 'completed'
                               })}
-                              className="shrink-0 mt-0.5 p-0.5 rounded-full hover:bg-white/[0.05] transition-colors"
-                              title={topicCompleted ? 'Mark active' : 'Mark complete'}
+                              className="shrink-0 mt-0.5 p-0.5 rounded-full hover:bg-white/[0.05] transition-colors group/status"
+                              title={topicCompleted ? 'Click to undo — mark as active' : 'Mark complete'}
                             >
                               {topicCompleted ? (
                                 <CheckCircle className="w-4 h-4 text-[#51FAAA]" />
@@ -332,11 +332,21 @@ export default function CoursesSection({ memberId, courseHours = {} }) {
 
                             {/* Content */}
                             <div className="flex-1 min-w-0">
-                              <span className={`text-sm font-medium transition-all ${
-                                topicCompleted ? 'text-white/40 line-through' : 'text-white/80'
-                              }`}>
-                                {topic.name}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm font-medium transition-all ${
+                                  topicCompleted ? 'text-white/40 line-through' : 'text-white/80'
+                                }`}>
+                                  {topic.name}
+                                </span>
+                                {topicCompleted && (
+                                  <button
+                                    onClick={() => handleUpdateTopic(course._id, topic._id, { status: 'active' })}
+                                    className="text-[10px] font-sans text-gray-600 hover:text-[#51FAAA] transition-colors underline underline-offset-2 decoration-dotted decoration-gray-700 hover:decoration-[#51FAAA]/50"
+                                  >
+                                    Undo
+                                  </button>
+                                )}
+                              </div>
                               {topic.notes && (
                                 <p className={`text-xs mt-0.5 ${
                                   topicCompleted ? 'text-gray-600' : 'text-gray-500'

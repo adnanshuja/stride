@@ -14,12 +14,13 @@ GET  /api/auth/gmail/callback              — none — stores refreshToken, red
 
 ## Admin (verifyToken + requireAdmin)
 ```
-GET    /api/admin/dashboard        — all members + today's log each
-GET    /api/admin/dashboard/weekly — last 7 days aggregation {days: [{date,totalHours,memberCount}]}
-POST   /api/members                — create member, body: {name,email,category}
-GET    /api/members                — list all members
-GET    /api/members/:memberId      — single member
-DELETE /api/members/:memberId      — delete member + all logs
+GET    /api/admin/dashboard             — all members + today's log each
+GET    /api/admin/dashboard/weekly      — last 7 days hours aggregation {days}
+GET    /api/admin/dashboard/jobs        — aggregated job stats {totalApplications, thisWeek, byStatus, bySource, weeklyTrend, perMember}
+POST   /api/members                     — create member, body: {name,email,category}
+GET    /api/members                     — list all members
+GET    /api/members/:memberId           — single member
+DELETE /api/members/:memberId           — delete member + all logs
 ```
 
 ## Logs (verifyToken)

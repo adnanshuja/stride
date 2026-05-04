@@ -1,6 +1,6 @@
-import { Users, Clock, Target, Mail, UserCheck, Activity } from 'lucide-react';
+import { Users, Clock, Target, Mail, UserCheck, Activity, Briefcase } from 'lucide-react';
 
-export default function StatsRow({ members }) {
+export default function StatsRow({ members, jobsData }) {
   const totalMembers = members.length;
   const totalFilled = members.reduce((sum, m) => {
     return sum + Object.keys(m.todayLog?.hours || {}).length;
@@ -23,10 +23,11 @@ export default function StatsRow({ members }) {
     { icon: Mail, label: 'Gmail Connected', value: gmailConnected, color: 'text-emerald-400', sub: totalMembers > 0 ? `${Math.round((gmailConnected / totalMembers) * 100)}%` : null },
     { icon: UserCheck, label: 'FREE / RESTRICTED', value: `${free} / ${restricted}`, color: 'text-white', sub: null },
     { icon: Activity, label: 'Active Today', value: activeToday, color: 'text-[#51FAAA]', sub: totalMembers > 0 ? `${Math.round((activeToday / totalMembers) * 100)}%` : null },
+    { icon: Briefcase, label: 'Applications', value: jobsData?.totalApplications ?? '—', color: 'text-blue-400', sub: jobsData ? `${jobsData.thisWeek} this week` : null },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
       {cards.map((card, i) => {
         const Icon = card.icon;
         return (

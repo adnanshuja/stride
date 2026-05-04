@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar';
 import MemberCard from '../components/MemberCard';
 import StatsRow from '../components/dashboard/StatsRow';
 import WeeklyMiniBars from '../components/dashboard/WeeklyMiniBars';
+import WeeklyJobsBar from '../components/dashboard/WeeklyJobsBar';
+import JobsPipeline from '../components/dashboard/JobsPipeline';
 import ActivityHighlights from '../components/dashboard/ActivityHighlights';
 import TeamRing from '../components/dashboard/TeamRing';
 import { Button } from '../components/ui/button';
@@ -15,6 +17,7 @@ import { UserPlus, Users, Check, RefreshCw } from 'lucide-react';
 
 export default function DashboardPage() {
   const [members, setMembers] = useState([]);
+  const [jobsData, setJobsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
@@ -26,8 +29,12 @@ export default function DashboardPage() {
   const fetchDashboard = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/admin/dashboard');
-      setMembers(data.members);
+      const [dashRes, jobsRes] = await Promise.all([
+        api.get('/admin/dashboard'),
+        api.get('/admin/dashboard/jobs').catch(() => null),
+      ]);
+      setMembers(dashRes.data.members);
+      if (jobsRes) setJobsData(jobsRes.data);
     } catch {
       // handled by error boundary
     } finally {
@@ -93,16 +100,24 @@ export default function DashboardPage() {
         {/* Stats + Ring */}
         {members.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 mb-6">
-            <StatsRow members={members} />
+            <StatsRow members={members} jobsData={jobsData} />
             <TeamRing members={members} />
           </div>
         )}
 
-        {/* Weekly bars + Activity highlights */}
+        {/* Weekly bars + Job pipeline + Activity */}
         {members.length > 0 && (
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-3 mb-6">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_380px] gap-3 mb-6">
             <WeeklyMiniBars />
+            <WeeklyJobsBar jobsData={jobsData} />
             <ActivityHighlights members={members} />
+          </div>
+        )}
+
+        {/* Jobs pipeline */}
+        {members.length > 0 && (
+          <div className="mb-6">
+            <JobsPipeline jobsData={jobsData} />
           </div>
         )}
 

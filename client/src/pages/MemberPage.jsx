@@ -1,11 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
-import TimelineSlot from '../components/TimelineSlot';
-import SpanBlock from '../components/SpanBlock';
-import BreakSlot from '../components/BreakSlot';
 import ScannerButton from '../components/ScanButton';
 import MemberHistory from '../components/MemberHistory';
 import FocusInput from '../components/FocusInput';
@@ -25,7 +22,6 @@ export default function MemberPage() {
   const [memberInfo, setMemberInfo] = useState(null);
   const [todayLog, setTodayLog] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [scanResults, setScanResults] = useState([]);
   const [courses, setCourses] = useState([]);
 
   const isAuthenticated = admin || member;
@@ -64,21 +60,6 @@ export default function MemberPage() {
     fetchData();
   }, [memberId, isAuthenticated]);
 
-  // Auto-scan on mount for RESTRICTED members
-  useEffect(() => {
-    if (!isAuthenticated || !memberInfo || memberInfo.category !== 'RESTRICTED') return;
-    let cancelled = false;
-    api.post(`/scan/${memberId}`).then(({ data }) => {
-      if (!cancelled && data.results?.length) {
-        setScanResults(data.results.map((r) => ({
-          label: `${r.role} @ ${r.company}`,
-          template: `${r.role} at ${r.company}`,
-        })));
-      }
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [memberId, isAuthenticated, memberInfo?.category]);
-
   const handleUpdate = async (slot, text, span, courseId) => {
     if (isAdminView) {
       addToast('Admin cannot log entries', 'error', 3000);
@@ -97,89 +78,45 @@ export default function MemberPage() {
     }
   };
 
-  const handleBreak = async (slot, note) => {
-    if (isAdminView) {
-      addToast('Admin cannot log entries', 'error', 3000);
-      return;
-    }
-    try {
-      await api.post('/logs/update', { memberId, hour: slot, update: note || 'Break', isBreak: true });
-      const { data } = await api.get(`/logs/today/${memberId}`);
-      setTodayLog(data);
-      addToast('Break logged', 'success', 2000);
-    } catch (err) {
-      addToast('Failed to log break', 'error', 3000);
-    }
-  };
-
   if (!isAuthenticated) return null;
 
   const hours = todayLog?.hours || {};
   const courseHours = todayLog?.courseHours || {};
-  const maxSlots = 10 + (todayLog?.breakCount || 0);
-  const totalCourseMinutes = courses.reduce((sum, c) => sum + (c.totalCourseMinutes || 0), 0);
-  const formatMinutes = (mins) => {
-    if (!mins || mins <= 0) return '';
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+
+  // Log entry state
+  const [logText, setLogText] = useState('');
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [editCourseId, setEditCourseId] = useState('');
+  const [addCourseId, setAddCourseId] = useState('');
+
+  // Sort non-break entries by slot number
+  const sortedEntries = Object.entries(hours || {})
+    .filter(([, text]) => text && !text.startsWith('Break'))
+    .sort(([a], [b]) => parseInt(a) - parseInt(b));
+
+  const handleLogSubmit = async () => {
+    if (!logText.trim() || isAdminView) return;
+    const slots = Object.keys(hours).map(Number).filter((k) => !isNaN(k));
+    const nextSlot = slots.length > 0 ? Math.max(...slots) + 1 : 1;
+    await handleUpdate(nextSlot, logText.trim(), 1, addCourseId || undefined);
+    setLogText('');
+    setAddCourseId('');
   };
 
-  const startedAtHour = todayLog?.startedAt
-    ? parseInt(todayLog.startedAt.split(':')[0], 10)
-    : null;
-
-  const currentSlot = startedAtHour
-    ? Math.max(1, Math.min(maxSlots, new Date().getHours() - startedAtHour + 1))
-    : Math.max(1, Math.min(10, new Date().getHours() - 7));
-
-  const getSlotState = (slot) => {
-    if (hours[String(slot)]) return 'done';
-    if (slot < currentSlot) return 'missed';
-    if (slot === currentSlot) return 'current';
-    return 'future';
+  const handleStartEdit = (slot, text) => {
+    setEditingSlot(slot);
+    setEditText(text);
+    setEditCourseId(courseHours[String(slot)] || '');
   };
 
-  const isBreakSlot = (slot) => {
-    const entry = hours[String(slot)];
-    if (!entry) return false;
-    return entry === 'Break' || entry.startsWith('Break');
+  const handleSaveEdit = async () => {
+    if (!editText.trim() || editingSlot === null) return;
+    await handleUpdate(editingSlot, editText.trim(), 1, editCourseId || undefined);
+    setEditingSlot(null);
+    setEditText('');
+    setEditCourseId('');
   };
-
-  const formatTime = (timeStr) => {
-    if (!timeStr) return '';
-    const [h, m] = timeStr.split(':');
-    const hour = parseInt(h, 10);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const hour12 = hour % 12 || 12;
-    return `${hour12}:${m} ${ampm}`;
-  };
-
-  // Group consecutive identical entries into spans
-  const buildTimeline = () => {
-    const items = [];
-    let i = 1;
-    while (i <= maxSlots) {
-      const entry = hours[String(i)];
-      if (!entry || isBreakSlot(i)) {
-        items.push({ type: 'slot', slot: i, state: getSlotState(i), text: entry || '', isBreak: isBreakSlot(i) });
-        i++;
-        continue;
-      }
-      let j = i + 1;
-      while (j <= maxSlots && hours[String(j)] === entry) j++;
-      if (j - i > 1) {
-        items.push({ type: 'span', startSlot: i, endSlot: j - 1, text: entry });
-        i = j;
-      } else {
-        items.push({ type: 'slot', slot: i, state: getSlotState(i), text: entry, isBreak: false });
-        i++;
-      }
-    }
-    return items;
-  };
-
-  const timeline = buildTimeline();
 
   return (
     <div className="min-h-screen bg-[#0C0E1D]">
@@ -221,116 +158,125 @@ export default function MemberPage() {
           </div>
         ) : (
           <>
-            {/* Timeline */}
-            <div className="animate-fade-up animate-stagger-2 space-y-1.5">
-              <div className="flex items-center gap-2 mb-2">
+            {/* Log Entries */}
+            <div className="animate-fade-up animate-stagger-2 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
                 <div className="w-1 h-1 rounded-full bg-[#51FAAA]" />
-                <span className="font-sans text-xs text-gray-500 tracking-widest uppercase">Today</span>
+                <span className="font-sans text-xs text-gray-500 tracking-widest uppercase">Today's Log</span>
+                {Object.keys(hours).length > 0 && (
+                  <span className="text-[11px] text-gray-600 font-mono ml-1">
+                    {Object.keys(hours).filter((k) => !hours[k]?.startsWith('Break')).length} entries
+                  </span>
+                )}
               </div>
 
-              {/* Start Day button — shown when day hasn't started and no hours filled */}
-              {!todayLog?.startedAt && Object.keys(hours).length === 0 && (
-                <div className="mb-4">
+              {/* Add entry input */}
+              <div className="glass rounded-2xl p-3 space-y-2">
+                <textarea
+                  value={logText}
+                  onChange={(e) => setLogText(e.target.value)}
+                  placeholder="What are you working on?"
+                  className="w-full bg-[#0C0E1D]/60 border border-white/[0.06] rounded-xl px-4 py-3 text-sm text-white/90 font-sans placeholder:text-gray-700 focus:outline-none focus:border-[#51FAAA]/40 focus:ring-1 focus:ring-[#51FAAA]/20 resize-none transition-all"
+                  rows={2}
+                />
+                <div className="flex items-center gap-2">
+                  {courses.length > 0 && (
+                    <select
+                      value={addCourseId}
+                      onChange={(e) => setAddCourseId(e.target.value)}
+                      className="bg-[#0C0E1D] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-gray-400 focus:outline-none focus:border-[#51FAAA]/40"
+                    >
+                      <option value="">No course</option>
+                      {courses.map((c) => (
+                        <option key={c._id} value={c._id}>{c.name}</option>
+                      ))}
+                    </select>
+                  )}
                   <Button
-                    onClick={async () => {
-                      try {
-                        await api.post('/logs/start-day', { memberId });
-                        const { data } = await api.get(`/logs/today/${memberId}`);
-                        setTodayLog(data);
-                        addToast('Day started!', 'success', 2000);
-                      } catch (err) {
-                        addToast(err.response?.data?.error || 'Failed to start day', 'error', 3000);
-                      }
-                    }}
-                    className="w-full bg-[#51FAAA] text-[#0C0E1D] font-semibold hover:bg-[#29D97A] transition-all py-6 text-lg"
+                    onClick={handleLogSubmit}
+                    disabled={!logText.trim() || isAdminView}
+                    size="sm"
+                    className="ml-auto"
                   >
-                    Start Day
+                    Log Entry
                   </Button>
                 </div>
-              )}
+              </div>
 
-              {/* Started at display */}
-              {todayLog?.startedAt && (
-                <div className="text-sm text-[#51FAAA] font-medium mb-2">
-                  Started at {formatTime(todayLog.startedAt)}
+              {/* Entries or empty state */}
+              {sortedEntries.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-xs text-gray-600 font-sans">No entries yet. Log your first entry above.</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {sortedEntries.map(([slot, text]) => {
+                    const isEditing = editingSlot === parseInt(slot);
+                    const slotCourseId = courseHours[String(slot)] || '';
+                    const course = slotCourseId ? courses.find((c) => c._id === slotCourseId) : null;
+
+                    if (isEditing) {
+                      return (
+                        <div key={slot} className="glass rounded-2xl p-3 space-y-2 border border-[#51FAAA]/20">
+                          <textarea
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            className="w-full bg-[#0C0E1D]/60 border border-white/[0.06] rounded-xl px-4 py-3 text-sm text-white/90 font-sans placeholder:text-gray-700 focus:outline-none focus:border-[#51FAAA]/40 focus:ring-1 focus:ring-[#51FAAA]/20 resize-none transition-all"
+                            rows={2}
+                            autoFocus
+                          />
+                          <div className="flex gap-2 justify-end">
+                            {courses.length > 0 && (
+                              <select
+                                value={editCourseId}
+                                onChange={(e) => setEditCourseId(e.target.value)}
+                                className="bg-[#0C0E1D] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-gray-400 focus:outline-none focus:border-[#51FAAA]/40"
+                              >
+                                <option value="">No course</option>
+                                {courses.map((c) => (
+                                  <option key={c._id} value={c._id}>{c.name}</option>
+                                ))}
+                              </select>
+                            )}
+                            <Button size="sm" variant="ghost" onClick={() => setEditingSlot(null)}>Cancel</Button>
+                            <Button size="sm" onClick={handleSaveEdit} disabled={!editText.trim()}>Save</Button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={slot}
+                        className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 flex items-start gap-3 group hover:border-white/[0.10] transition-all"
+                      >
+                        <span className="font-mono text-[11px] text-gray-600 shrink-0 mt-0.5">#{slot}</span>
+                        <p className="text-sm text-white/80 font-sans flex-1 leading-relaxed">{text}</p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {course && (
+                            <Badge variant="default" className="text-[10px]">{course.name}</Badge>
+                          )}
+                          <button
+                            onClick={() => handleStartEdit(parseInt(slot), text)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-gray-500 hover:text-white font-sans"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-
-              {/* Daily stats */}
-              {totalCourseMinutes > 0 && (
-                <div className="text-[11px] text-gray-500 font-mono mb-3">
-                  {formatMinutes(totalCourseMinutes)} course work · {Object.keys(hours).length}/{maxSlots}h
-                </div>
-              )}
-
-              {timeline.map((item, idx) => {
-                if (item.type === 'span') {
-                  return (
-                    <SpanBlock
-                      key={`span-${item.startSlot}`}
-                      startSlot={item.startSlot}
-                      endSlot={item.endSlot}
-                      text={item.text}
-                      onEdit={() => {}}
-                      onUnspan={() => {}}
-                    />
-                  );
-                }
-                if (item.isBreak) {
-                  return (
-                    <BreakSlot
-                      key={`break-${item.slot}`}
-                      slot={item.slot}
-                      note={item.text?.replace('Break — ', '').replace('Break', '') || ''}
-                      onSave={(note) => handleBreak(item.slot, note)}
-                    />
-                  );
-                }
-                return (
-                  <TimelineSlot
-                    key={`slot-${item.slot}`}
-                    slot={item.slot}
-                    state={item.state}
-                    text={item.text}
-                    isBreak={false}
-                    scanChips={item.state === 'current' ? scanResults : []}
-                    currentSlot={currentSlot}
-                    courses={courses}
-                    slotCourseId={courseHours[String(item.slot)] || ''}
-                    onUpdate={(slot, text, span, courseId) => handleUpdate(slot, text, span, courseId)}
-                    onEdit={(template) => {}}
-                    maxSpan={Math.min(4, maxSlots - item.slot + 1)}
-                  />
-                );
-              })}
             </div>
 
-            {/* Utility Bar */}
+            {/* Scanner */}
             <div className="flex gap-2 flex-wrap animate-fade-up animate-stagger-3">
               <ScannerButton
                 memberId={memberId}
                 category={memberInfo?.category}
-                onFillSlot={(text) => addToast('Auto-detected entry available', 'default')}
+                onFillSlot={(text) => setLogText(text)}
               />
-            </div>
-
-            {/* Quick Break button */}
-            <div className="animate-fade-up animate-stagger-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  for (let i = currentSlot; i <= maxSlots; i++) {
-                    if (!hours[String(i)]) {
-                      handleBreak(i, 'Lunch');
-                      break;
-                    }
-                  }
-                }}
-                className="text-orange-400 border-orange-500/20 hover:bg-orange-500/10"
-              >
-                ☕ Quick Break
-              </Button>
             </div>
           </>
         )}

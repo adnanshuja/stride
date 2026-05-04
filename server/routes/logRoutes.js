@@ -11,7 +11,7 @@ function today() {
 // POST /update — Log an hourly update (member role only)
 router.post('/update', verifyToken, requireMember, async (req, res) => {
   try {
-    const { memberId, hour, update, span, isBreak, courseId } = req.body;
+    const { memberId, hour, update, span, isBreak, courseId, duration } = req.body;
     const member = await Member.findById(memberId);
     if (!member) return res.status(404).json({ error: 'Member not found' });
 
@@ -45,6 +45,10 @@ router.post('/update', verifyToken, requireMember, async (req, res) => {
       if (courseId) {
         hoursToFill[`courseHours.${hour + i}`] = courseId;
       }
+    }
+
+    if (duration) {
+      hoursToFill[`entryDurations.${hour}`] = duration;
     }
 
     log = await DailyLog.findOneAndUpdate(

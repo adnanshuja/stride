@@ -13,6 +13,11 @@ const DailyLogSchema = new mongoose.Schema({
     of: String,
     default: {},
   },
+  entryDurations: {
+    type: Map,
+    of: Number,
+    default: {},
+  },
   autoDetected: {
     type: [
       {

@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import MemberCard from '../components/MemberCard';
+import { FadeIn, Stagger } from '../components/AnimatedSection';
 import StatsRow from '../components/dashboard/StatsRow';
 import WeeklyMiniBars from '../components/dashboard/WeeklyMiniBars';
 import WeeklyJobsBar from '../components/dashboard/WeeklyJobsBar';
@@ -90,6 +91,7 @@ export default function DashboardPage() {
 
       <Navbar />
       <div className="w-full px-6 lg:px-10 py-8 max-w-[90rem] mx-auto">
+        <FadeIn>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <div>
@@ -110,6 +112,7 @@ export default function DashboardPage() {
             {showForm ? 'Cancel' : 'Add Member'}
           </Button>
         </div>
+        </FadeIn>
 
         {/* Shared signup code banner */}
         {sharedCode && (
@@ -137,26 +140,32 @@ export default function DashboardPage() {
 
         {/* Stats + Ring */}
         {members.length > 0 && (
+          <FadeIn delay={0.05}>
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 mb-6">
             <StatsRow members={members} jobsData={jobsData} />
             <TeamRing members={members} />
           </div>
+          </FadeIn>
         )}
 
         {/* Weekly bars + Job pipeline + Activity */}
         {members.length > 0 && (
+          <FadeIn delay={0.1}>
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_380px] gap-3 mb-6">
             <WeeklyMiniBars />
             <WeeklyJobsBar jobsData={jobsData} />
             <ActivityHighlights members={members} />
           </div>
+          </FadeIn>
         )}
 
         {/* Jobs pipeline */}
         {members.length > 0 && (
+          <FadeIn delay={0.15}>
           <div className="mb-6">
             <JobsPipeline jobsData={jobsData} />
           </div>
+          </FadeIn>
         )}
 
         {/* Add member form */}
@@ -215,6 +224,7 @@ export default function DashboardPage() {
             </Button>
           </div>
         ) : (
+          <Stagger stagger={0.04} delay={0.15}>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
             {members.map((m, i) => (
               <div key={m._id}>
@@ -222,6 +232,7 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+          </Stagger>
         )}
       </div>
     </div>

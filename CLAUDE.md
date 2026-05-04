@@ -25,6 +25,11 @@ All font choices, colors, spacing, and aesthetic direction are defined there.
 Do not deviate without explicit user approval.
 In QA mode, flag any code that doesn't match DESIGN.md.
 
+## UI/UX
+Always invoke the `ui-ux-pro-max` skill before any UI/UX work — designing,
+implementing, animating, or reviewing. Follow its workflow: analyze
+requirements → generate design system → search domains → implement.
+
 ## Hard rules
 - Never install packages without asking
 - Never run migrations without confirming

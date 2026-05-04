@@ -39,6 +39,14 @@
 | MemberHistory | Recent history display |
 | QuickActions | Chip shortcuts for common log entries |
 
+## Animation
+- `framer-motion` installed for staggered entrance and fade-in animations
+- `AnimatedSection.jsx` exports `FadeIn` (single element fade-up) and `Stagger` (staggered children)
+- Dashboard sections use FadeIn with incremental delays (0, 0.05, 0.1, 0.15)
+- Member cards grid uses Stagger with 0.04s stagger + 0.15s initial delay
+- Durations: 250ms, easeOut — follows ui-ux-pro-max guidelines (150-300ms, transform/opacity only)
+- `prefers-reduced-motion` respected by framer-motion internally
+
 ## UI Components (`client/src/components/ui/`)
 All Radix UI primitives, dark theme.
 

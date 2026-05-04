@@ -216,11 +216,14 @@ router.get('/activity/:memberId', verifyToken, requireAdmin, async (req, res) =>
   }
 });
 
-// GET /signup-code — Get current shared signup code
+// GET /signup-code — Get current shared signup code (auto-generates if missing)
 router.get('/signup-code', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const admin = await Admin.findById(req.user.adminId, 'signupCodeDisplay signupCodeExpires');
+    let admin = await Admin.findById(req.user.adminId);
     if (!admin) return res.status(404).json({ error: 'Admin not found.' });
+    if (!admin.signupCodeDisplay) {
+      await admin.generateSignupCode();
+    }
     res.json({
       signupCode: admin.signupCodeDisplay,
       expiresAt: admin.signupCodeExpires,

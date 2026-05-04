@@ -32,6 +32,8 @@ Default keywords: applied, application, LinkedIn, LangChain, AutoGen, agent, int
 | memberId | ObjectId | ref: Member, required |
 | date | String | YYYY-MM-DD, required |
 | hours | Map\<String,String\> | keys=slot numbers, values=text |
+| courseHours | Map\<String,String\> | slot → courseId for course-linked entries |
+| entryDurations | Map\<String,Number\> | slot → minutes tracked for this entry |
 | autoDetected | [Object] | see below |
 | startedAt | String | HH:mm — when member started |
 | breakCount | Number | breaks taken today |
@@ -50,6 +52,8 @@ autoDetected fields: `source` (gmail_sent/linkedin), `company`, `role`, `time` (
 | completedAt | Date | nullable |
 | completedComment | String | what member learned |
 | totalTopics | Number | default: 0 |
+| completedTopics | Number | default: 0 |
+| totalCourseMinutes | Number | default: 0 — sum of all topic timeSpent |
 | createdAt | Date | auto |
 
 ## Topic (`models/Topic.js`)
@@ -59,6 +63,9 @@ autoDetected fields: `source` (gmail_sent/linkedin), `company`, `role`, `time` (
 | name | String | required |
 | notes | String | optional |
 | order | Number | ordering within course |
+| status | String | enum: active, completed |
+| completedAt | Date | nullable |
+| timeSpent | Number | minutes spent on this topic |
 | createdAt | Date | auto |
 
 ## JobApplication (`models/JobApplication.js`)

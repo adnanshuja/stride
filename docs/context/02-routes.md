@@ -14,9 +14,10 @@ GET  /api/auth/gmail/callback              — none — stores refreshToken, red
 
 ## Admin (verifyToken + requireAdmin)
 ```
-GET    /api/admin/dashboard             — all members + today's log each
+GET    /api/admin/dashboard             — all members + today's log + courseStats each
 GET    /api/admin/dashboard/weekly      — last 7 days hours aggregation {days}
 GET    /api/admin/dashboard/jobs        — aggregated job stats {totalApplications, thisWeek, byStatus, bySource, weeklyTrend, perMember}
+GET    /api/admin/activity/:memberId    — date-ranged logs, query: start, end (YYYY-MM-DD)
 POST   /api/members                     — create member, body: {name,email,category}
 GET    /api/members                     — list all members
 GET    /api/members/:memberId           — single member
@@ -25,7 +26,7 @@ DELETE /api/members/:memberId           — delete member + all logs
 
 ## Logs (verifyToken)
 ```
-POST /api/logs/update              — requireMember — upsert hour, body: {hour, update}
+POST /api/logs/update              — requireMember — upsert hour, body: {hour, update, duration?, span?, courseId?}
 GET  /api/logs/today/:memberId     — today's log or {hours:{}, autoDetected:[]}
 GET  /api/logs/history/:memberId/:date — log for YYYY-MM-DD
 GET  /api/logs/recent/:memberId    — last 7 days summary

@@ -128,7 +128,7 @@ export default function LoginPage() {
               </Button>
 
               <p className="text-[10px] text-gray-600 text-center font-sans tracking-wider uppercase pt-1">
-                First login creates admin account
+                Admin credentials required
               </p>
             </form>
           ) : (

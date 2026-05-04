@@ -9,12 +9,17 @@ const navItems = [
 ];
 
 export default function Navbar() {
-  const { admin, logout } = useAuth();
+  const { admin, member, logout, memberLogout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = () => {
     logout();
+    navigate('/');
+  };
+
+  const handleMemberLogout = () => {
+    memberLogout();
     navigate('/');
   };
 
@@ -78,9 +83,22 @@ export default function Navbar() {
               </Button>
             </div>
           </div>
+        ) : member ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-sans text-gray-500">{member.name}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMemberLogout}
+              className="text-gray-500 hover:text-rose-400"
+              title="Logout"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="text-xs font-sans text-gray-500">Member view</span>
+            <span className="text-xs font-sans text-gray-500">Not signed in</span>
           </div>
         )}
       </div>

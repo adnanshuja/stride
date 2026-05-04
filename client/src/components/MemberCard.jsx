@@ -5,7 +5,7 @@ import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Button } from './ui/button';
 import { useToast } from './ui/toast';
-import { Eye, Mail, ScanLine, MoreHorizontal, X } from 'lucide-react';
+import { Clock, Eye, Mail, ScanLine, MoreHorizontal, X } from 'lucide-react';
 
 export default function MemberCard({ member, onRefresh }) {
   const [scanning, setScanning] = useState(false);
@@ -90,6 +90,18 @@ export default function MemberCard({ member, onRefresh }) {
           {/* Progress bar */}
           <Progress value={progress} variant={isRestricted ? 'magenta' : 'default'} />
 
+          {member.courseStats && (
+            <div className="text-xs font-sans text-gray-500">
+              {member.courseStats.totalCourses} course{member.courseStats.totalCourses !== 1 ? 's' : ''}
+              {member.courseStats.totalTopics > 0 && (
+                <> · {member.courseStats.completedTopics}/{member.courseStats.totalTopics} topics</>
+              )}
+              {member.courseStats.totalCourseMinutes > 0 && (
+                <> · {Math.floor(member.courseStats.totalCourseMinutes / 60)}h {member.courseStats.totalCourseMinutes % 60}m</>
+              )}
+            </div>
+          )}
+
           {/* Integration status */}
           <div className="flex items-center gap-2">
             <span className={`relative flex h-2 w-2 ${hasGmail ? '' : 'opacity-30'}`}>
@@ -135,6 +147,14 @@ export default function MemberCard({ member, onRefresh }) {
                 {scanning ? 'Scanning...' : 'Auto-Detect'}
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/history?member=${member._id}`)}
+            >
+              <Clock className="w-3 h-3 mr-1" />
+              Activity
+            </Button>
 
             {/* Menu trigger */}
             <div className="relative ml-auto">

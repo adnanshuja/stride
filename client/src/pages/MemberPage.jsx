@@ -11,7 +11,7 @@ import JobsSection from '../components/JobsSection';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useToast } from '../components/ui/toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Clock } from 'lucide-react';
 
 export default function MemberPage() {
   const { memberId } = useParams();
@@ -60,7 +60,7 @@ export default function MemberPage() {
     fetchData();
   }, [memberId, isAuthenticated]);
 
-  const handleUpdate = async (slot, text, span, courseId) => {
+  const handleUpdate = async (slot, text, span, courseId, duration) => {
     if (isAdminView) {
       addToast('Admin cannot log entries', 'error', 3000);
       return;
@@ -69,6 +69,7 @@ export default function MemberPage() {
       const payload = { memberId, hour: slot, update: text };
       if (span && span > 1) payload.span = span;
       if (courseId) payload.courseId = courseId;
+      if (duration) payload.duration = duration;
       await api.post('/logs/update', payload);
       const { data } = await api.get(`/logs/today/${memberId}`);
       setTodayLog(data);
@@ -82,12 +83,15 @@ export default function MemberPage() {
 
   const hours = todayLog?.hours || {};
   const courseHours = todayLog?.courseHours || {};
+  const entryDurations = todayLog?.entryDurations || {};
 
   // Log entry state
   const [logText, setLogText] = useState('');
+  const [logDuration, setLogDuration] = useState('');
   const [editingSlot, setEditingSlot] = useState(null);
   const [editText, setEditText] = useState('');
   const [editCourseId, setEditCourseId] = useState('');
+  const [editDuration, setEditDuration] = useState('');
   const [addCourseId, setAddCourseId] = useState('');
 
   // Sort non-break entries by slot number
@@ -99,8 +103,9 @@ export default function MemberPage() {
     if (!logText.trim() || isAdminView) return;
     const slots = Object.keys(hours).map(Number).filter((k) => !isNaN(k));
     const nextSlot = slots.length > 0 ? Math.max(...slots) + 1 : 1;
-    await handleUpdate(nextSlot, logText.trim(), 1, addCourseId || undefined);
+    await handleUpdate(nextSlot, logText.trim(), 1, addCourseId || undefined, parseInt(logDuration) || undefined);
     setLogText('');
+    setLogDuration('');
     setAddCourseId('');
   };
 
@@ -108,14 +113,16 @@ export default function MemberPage() {
     setEditingSlot(slot);
     setEditText(text);
     setEditCourseId(courseHours[String(slot)] || '');
+    setEditDuration(entryDurations[String(slot)] || '');
   };
 
   const handleSaveEdit = async () => {
     if (!editText.trim() || editingSlot === null) return;
-    await handleUpdate(editingSlot, editText.trim(), 1, editCourseId || undefined);
+    await handleUpdate(editingSlot, editText.trim(), 1, editCourseId || undefined, parseInt(editDuration) || undefined);
     setEditingSlot(null);
     setEditText('');
     setEditCourseId('');
+    setEditDuration('');
   };
 
   return (
@@ -192,6 +199,18 @@ export default function MemberPage() {
                       ))}
                     </select>
                   )}
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-gray-500" />
+                    <input
+                      type="number"
+                      min="0"
+                      max="480"
+                      value={logDuration}
+                      onChange={(e) => setLogDuration(e.target.value)}
+                      placeholder="min"
+                      className="w-16 bg-[#0C0E1D] border border-white/[0.08] rounded-lg px-2.5 py-2 text-xs text-gray-400 font-mono focus:outline-none focus:border-[#51FAAA]/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
                   <Button
                     onClick={handleLogSubmit}
                     disabled={!logText.trim() || isAdminView}
@@ -238,6 +257,18 @@ export default function MemberPage() {
                                 ))}
                               </select>
                             )}
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3 h-3 text-gray-500" />
+                              <input
+                                type="number"
+                                min="0"
+                                max="480"
+                                value={editDuration}
+                                onChange={(e) => setEditDuration(e.target.value)}
+                                placeholder="min"
+                                className="w-14 bg-[#0C0E1D] border border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-gray-400 font-mono focus:outline-none focus:border-[#51FAAA]/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                            </div>
                             <Button size="sm" variant="ghost" onClick={() => setEditingSlot(null)}>Cancel</Button>
                             <Button size="sm" onClick={handleSaveEdit} disabled={!editText.trim()}>Save</Button>
                           </div>
@@ -255,6 +286,13 @@ export default function MemberPage() {
                         <div className="flex items-center gap-2 shrink-0">
                           {course && (
                             <Badge variant="default" className="text-[10px]">{course.name}</Badge>
+                          )}
+                          {entryDurations[slot] && (
+                            <span className="text-[11px] text-gray-500 font-mono shrink-0">
+                              {entryDurations[slot] >= 60
+                                ? `${Math.floor(entryDurations[slot] / 60)}h ${entryDurations[slot] % 60}m`
+                                : `${entryDurations[slot]}min`}
+                            </span>
                           )}
                           <button
                             onClick={() => handleStartEdit(parseInt(slot), text)}
